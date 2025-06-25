@@ -24,5 +24,5 @@ provider "azurerm" {
 
 resource "azurerm_resource_group" "baroweb" {
   name     = "eb-barebaro-web"
-  location = "Norway Est"
+  location = "Norway east"
 }
