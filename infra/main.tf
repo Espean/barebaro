@@ -4,10 +4,6 @@ terraform {
       source  = "hashicorp/azurerm"
       version = "~> 3.0"
     }
-    az_api = {
-      source  = "azure/azapi"
-      version = "~> 1.0"
-    }
   }
   backend "azurerm" {
     resource_group_name  = "eb-barebaro"
