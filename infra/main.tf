@@ -19,6 +19,7 @@ terraform {
 
 provider "azurerm" {
   features {}
+  subscription_id = "f275d5ca-5939-420f-bba2-e502b7489668"
 }
 
 resource "azurerm_resource_group" "baroweb" {
