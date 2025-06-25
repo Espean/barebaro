@@ -20,3 +20,8 @@ terraform {
     use_oidc = true
   }
 }
+
+resource "azurerm_resource_group" "baroweb" {
+  name = "eb-barebaro-web"
+  location = "Norway Est"
+}
