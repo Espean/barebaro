@@ -3,7 +3,6 @@ terraform {
     azurerm = {
       source  = "hashicorp/azurerm"
       version = "4.34.0"
-      features = {}
     }
   }
   backend "azurerm" {
@@ -18,7 +17,11 @@ terraform {
   }
 }
 
+provider "azurerm" {
+  features {}
+}
+
 resource "azurerm_resource_group" "baroweb" {
-  name = "eb-barebaro-web"
+  name     = "eb-barebaro-web"
   location = "Norway Est"
 }
