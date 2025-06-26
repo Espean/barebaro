@@ -73,8 +73,4 @@ resource "azurerm_static_web_app" "frontend" {
   resource_group_name = azurerm_resource_group.baroweb.name
   location            = "West Europe"
   sku_tier            = "Free"
-
-  identity {
-    type = "SystemAssigned"
-  }
 }
