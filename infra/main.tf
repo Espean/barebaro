@@ -21,8 +21,66 @@ provider "azurerm" {
   features {}
   subscription_id = "f275d5ca-5939-420f-bba2-e502b7489668"
 }
+data "azurerm_storage_account" "existing" {
+  name                = "barebarosa"
+  resource_group_name = "eb-barebaro"
+}
+resource "azurerm_storage_table" "metadata" {
+  name                 = "audiometadata"
+  storage_account_name = data.azurerm_storage_account.existing.name
+}
 
 resource "azurerm_resource_group" "baroweb" {
   name     = "eb-barebaro-web"
   location = "Norway east"
+}
+
+resource "azurerm_service_plan" "function" {
+  name                = "baro-fn-plan"
+  location            = azurerm_resource_group.baroweb.location
+  resource_group_name = azurerm_resource_group.baroweb.name
+  os_type             = "Linux"
+  reserved            = true
+  sku_name            = "Y1"
+}
+
+resource "azurerm_linux_function_app" "api" {
+  name                       = "baro-api"
+  location                   = azurerm_resource_group.baroweb.location
+  resource_group_name        = azurerm_resource_group.baroweb.name
+  service_plan_id            = azurerm_service_plan.function.id
+  storage_account_name       = data.azurerm_storage_account.existing.name
+  storage_account_access_key = data.azurerm_storage_account.existing.primary_access_key
+
+  identity {
+    type = "SystemAssigned"
+  }
+
+  site_config {
+    application_stack {
+      node_version = "18"
+    }
+  }
+
+  app_settings = {
+    "AzureWebJobsStorage"     = data.azurerm_storage_account.existing.primary_connection_string
+    "FUNCTIONS_WORKER_RUNTIME" = "node"
+    "METADATA_TABLE_NAME"     = azurerm_storage_table.metadata.name
+  }
+}
+
+resource "azurerm_static_web_app" "frontend" {
+  name                = "baro-frontend"
+  resource_group_name = azurerm_resource_group.baroweb.name
+  location            = "West Europe"
+  sku_tier            = "Free"
+
+  identity {
+    type = "SystemAssigned"
+  }
+
+  # Lenke til GitHub repo (autodeploy via Actions)
+  repository_url      = "https://github.com/Espean/barebaro"
+  repository_branch = "main"
+  
 }
