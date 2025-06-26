@@ -75,9 +75,10 @@ resource "azurerm_static_web_app" "frontend" {
   sku_tier            = "Free"
 }
 
-resource "azurerm_static_web_app_custom_domain" "barebaro_no" {
+
+resource "azurerm_static_web_app_custom_domain" "www_barebaro_no" {
   static_web_app_id = azurerm_static_web_app.frontend.id
-  domain_name       = "barebaro.no"
+  domain_name       = "www.barebaro.no"
   validation_type   = "cname-delegation"
 }
 
