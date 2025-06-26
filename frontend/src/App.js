@@ -1,23 +1,12 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef } from 'react';
 
 function App() {
-  const [recordings, setRecordings] = useState([]);
   const [isRecording, setIsRecording] = useState(false);
-  const [showFormIdx, setShowFormIdx] = useState(null);
-  const [formData, setFormData] = useState({ name: '', category: '' });
-  const [cloudRecordings, setCloudRecordings] = useState([]);
+  const [recordedBlob, setRecordedBlob] = useState(null);
+  const [name, setName] = useState('');
+  const [showNameForm, setShowNameForm] = useState(false);
   const mediaRecorderRef = useRef(null);
   const audioChunksRef = useRef([]);
-
-  const fetchCloudRecordings = () => {
-    fetch('/api/list')
-      .then(res => res.json())
-      .then(setCloudRecordings);
-  };
-
-  useEffect(() => {
-    fetchCloudRecordings();
-  }, []);
 
   const startRecording = async () => {
     const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
@@ -28,8 +17,8 @@ function App() {
     };
     mediaRecorderRef.current.onstop = () => {
       const blob = new Blob(audioChunksRef.current, { type: 'audio/webm' });
-      setRecordings((prev) => [...prev, { blob, name: '', category: '' }]);
-      setShowFormIdx(recordings.length); // show form for the new recording
+      setRecordedBlob(blob);
+      setShowNameForm(true);
     };
     mediaRecorderRef.current.start();
     setIsRecording(true);
@@ -40,69 +29,107 @@ function App() {
     setIsRecording(false);
   };
 
-  const deleteRecording = (idx) => {
-    setRecordings((prev) => prev.filter((_, i) => i !== idx));
-    setShowFormIdx(null);
-  };
+  const handleNameChange = (e) => setName(e.target.value);
 
-  const handleFormChange = (e) => {
-    setFormData({ ...formData, [e.target.name]: e.target.value });
-  };
-
-  const saveRecording = async (idx) => {
-    const { blob } = recordings[idx];
-    const data = new FormData();
-    data.append('file', blob, 'recording.webm');
-    data.append('name', formData.name);
-    data.append('category', formData.category);
-    await fetch('/api/upload', { method: 'POST', body: data });
-    setRecordings((prev) => prev.map((rec, i) => i === idx ? { ...rec, name: formData.name, category: formData.category } : rec));
-    setShowFormIdx(null);
-    setFormData({ name: '', category: '' });
-    fetchCloudRecordings(); // Refresh the cloud recordings list after save
+  const handleSave = (e) => {
+    e.preventDefault();
+    // TODO: Upload logic here
+    setShowNameForm(false);
+    setName('');
+    setRecordedBlob(null);
   };
 
   return (
-    <div style={{ maxWidth: 600, margin: 'auto', padding: 32 }}>
-      <h1>Barebaro Sound Recorder</h1>
-      <button onClick={isRecording ? stopRecording : startRecording}>
-        {isRecording ? 'Stop Recording' : 'Start Recording'}
-      </button>
-      <h2>Recordings (Not yet uploaded)</h2>
-      <ul>
-        {recordings.map((rec, idx) => (
-          <li key={idx}>
-            <audio controls src={URL.createObjectURL(rec.blob)} />
-            {showFormIdx === idx ? (
-              <form onSubmit={e => { e.preventDefault(); saveRecording(idx); }}>
-                <input name="name" placeholder="Name" value={formData.name} onChange={handleFormChange} required />
-                <input name="category" placeholder="Category" value={formData.category} onChange={handleFormChange} required />
-                <button type="submit">Save</button>
-                <button type="button" onClick={() => deleteRecording(idx)}>Delete</button>
-              </form>
-            ) : (
-              <>
-                <span>{rec.name && `Name: ${rec.name} `}</span>
-                <span>{rec.category && `Category: ${rec.category}`}</span>
-                <button onClick={() => setShowFormIdx(idx)}>Edit</button>
-                <button onClick={() => deleteRecording(idx)}>Delete</button>
-              </>
-            )}
-          </li>
-        ))}
-      </ul>
-      <h2>Saved Recordings</h2>
-      <ul>
-        {cloudRecordings.map((rec, idx) => (
-          <li key={rec.rowKey}>
-            <span>Name: {rec.name} </span>
-            <span>Category: {rec.category} </span>
-            <span>Size: {rec.size} bytes </span>
-            <span>Uploaded: {rec.uploadTime} </span>
-            {/* TODO: Add playback, delete, edit actions */}
-          </li>
-        ))}
-      </ul>
+    <div style={{
+      minHeight: '100vh',
+      background: 'linear-gradient(135deg, #e0eafc 0%, #cfdef3 100%)',
+      display: 'flex',
+      flexDirection: 'column',
+      alignItems: 'center',
+      justifyContent: 'center',
+      fontFamily: 'Segoe UI, sans-serif'
+    }}>
+      <h1 style={{ fontSize: 48, fontWeight: 700, color: '#2d3a4b', marginBottom: 40 }}>Barebaros lyd</h1>
+      {!isRecording && !showNameForm && (
+        <button
+          onClick={startRecording}
+          style={{
+            background: 'linear-gradient(90deg, #667eea 0%, #764ba2 100%)',
+            color: '#fff',
+            border: 'none',
+            borderRadius: 50,
+            padding: '24px 64px',
+            fontSize: 28,
+            fontWeight: 600,
+            boxShadow: '0 8px 32px rgba(102,126,234,0.2)',
+            cursor: 'pointer',
+            transition: 'background 0.2s',
+            marginBottom: 32
+          }}
+        >
+          Start opptak
+        </button>
+      )}
+      {isRecording && (
+        <>
+          <div style={{ fontSize: 22, color: '#764ba2', marginBottom: 16 }}>Opptak pågår...</div>
+          <button
+            onClick={stopRecording}
+            style={{
+              background: 'linear-gradient(90deg, #ff5858 0%, #f09819 100%)',
+              color: '#fff',
+              border: 'none',
+              borderRadius: 50,
+              padding: '20px 56px',
+              fontSize: 24,
+              fontWeight: 600,
+              boxShadow: '0 8px 32px rgba(255,88,88,0.15)',
+              cursor: 'pointer',
+              transition: 'background 0.2s',
+              marginBottom: 32
+            }}
+          >
+            Stopp
+          </button>
+        </>
+      )}
+      {showNameForm && recordedBlob && (
+        <form onSubmit={handleSave} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 16 }}>
+          <audio controls src={URL.createObjectURL(recordedBlob)} style={{ marginBottom: 16 }} />
+          <input
+            type="text"
+            placeholder="Gi opptaket et navn..."
+            value={name}
+            onChange={handleNameChange}
+            required
+            style={{
+              fontSize: 20,
+              padding: '12px 24px',
+              borderRadius: 8,
+              border: '1px solid #ccc',
+              marginBottom: 8,
+              width: 300
+            }}
+          />
+          <button
+            type="submit"
+            style={{
+              background: 'linear-gradient(90deg, #43cea2 0%, #185a9d 100%)',
+              color: '#fff',
+              border: 'none',
+              borderRadius: 50,
+              padding: '16px 48px',
+              fontSize: 22,
+              fontWeight: 600,
+              boxShadow: '0 8px 32px rgba(67,206,162,0.15)',
+              cursor: 'pointer',
+              transition: 'background 0.2s'
+            }}
+          >
+            Lagre opptak
+          </button>
+        </form>
+      )}
     </div>
   );
 }
