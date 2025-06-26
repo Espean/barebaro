@@ -1,4 +1,5 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useCallback } from 'react';
+import WaveSurfer from 'wavesurfer-react';
 
 function App() {
   const [isRecording, setIsRecording] = useState(false);
@@ -8,7 +9,7 @@ function App() {
   const [audioDuration, setAudioDuration] = useState(0);
   const [trimStart, setTrimStart] = useState(0);
   const [trimEnd, setTrimEnd] = useState(0);
-  const audioRef = useRef(null);
+  const [waveSurfer, setWaveSurfer] = useState(null);
   const mediaRecorderRef = useRef(null);
   const audioChunksRef = useRef([]);
 
@@ -142,45 +143,30 @@ function App() {
     setRecordedBlob(null);
   };
 
-  // Custom RangeSlider component for trimming
-  function RangeSlider({ min, max, start, end, onChange }) {
-    // Calculate percent positions for handles
-    const percentStart = ((start - min) / (max - min)) * 100;
-    const percentEnd = ((end - min) / (max - min)) * 100;
-    return (
-      <div style={{ position: 'relative', width: 320, height: 36, marginBottom: 16 }}>
-        {/* Track */}
-        <div style={{ position: 'absolute', top: 16, left: 0, right: 0, height: 4, background: '#ddd', borderRadius: 2 }} />
-        {/* Selected region */}
-        <div style={{ position: 'absolute', top: 16, left: `${percentStart}%`, width: `${percentEnd - percentStart}%`, height: 4, background: 'linear-gradient(90deg,#43cea2,#185a9d)', borderRadius: 2 }} />
-        {/* Start handle */}
-        <input
-          type="range"
-          min={min}
-          max={max}
-          step={0.01}
-          value={start}
-          onChange={e => onChange(Math.min(Number(e.target.value), end - 0.01), end)}
-          style={{ position: 'absolute', top: 0, left: 0, width: '100%', pointerEvents: 'auto', background: 'none' }}
-        />
-        {/* End handle */}
-        <input
-          type="range"
-          min={min}
-          max={max}
-          step={0.01}
-          value={end}
-          onChange={e => onChange(start, Math.max(Number(e.target.value), start + 0.01))}
-          style={{ position: 'absolute', top: 0, left: 0, width: '100%', pointerEvents: 'auto', background: 'none' }}
-        />
-        {/* Labels */}
-        <div style={{ position: 'absolute', top: 28, left: 0, width: '100%', display: 'flex', justifyContent: 'space-between', fontSize: 14, color: '#555' }}>
-          <span>Start: {start.toFixed(2)}s</span>
-          <span>Slutt: {end.toFixed(2)}s</span>
-        </div>
-      </div>
-    );
-  }
+  // Handle region updates from wavesurfer
+  const handleRegionUpdate = useCallback((region) => {
+    setTrimStart(region.start);
+    setTrimEnd(region.end);
+  }, []);
+
+  // When a new blob is loaded, create a region for the full audio
+  const handleWaveSurferReady = useCallback((ws) => {
+    setWaveSurfer(ws);
+    ws.clearRegions();
+    ws.addRegion({
+      start: 0,
+      end: ws.getDuration(),
+      color: 'rgba(67,206,162,0.2)',
+      drag: true,
+      resize: true,
+    });
+    ws.on('region-updated', handleRegionUpdate);
+    ws.on('region-update-end', handleRegionUpdate);
+    ws.on('region-in', (region) => {
+      setTrimStart(region.start);
+      setTrimEnd(region.end);
+    });
+  }, [handleRegionUpdate]);
 
   return (
     <div style={{
@@ -238,35 +224,34 @@ function App() {
       )}
       {showNameForm && recordedBlob && (
         <form onSubmit={handleSave} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 16 }}>
-          <audio
-            ref={audioRef}
-            controls
-            src={URL.createObjectURL(recordedBlob)}
-            style={{ marginBottom: 16 }}
-            onLoadedMetadata={handleAudioLoaded}
-            onPlay={() => {
-              // Seek to trimStart when play is pressed
-              if (audioRef.current) audioRef.current.currentTime = trimStart;
-            }}
-            onTimeUpdate={() => {
-              // Pause at trimEnd
-              if (audioRef.current && audioRef.current.currentTime >= trimEnd) {
-                audioRef.current.pause();
-              }
-            }}
-          />
-          {audioDuration > 0 && (
-            <RangeSlider
-              min={0}
-              max={audioDuration}
-              start={trimStart}
-              end={trimEnd}
-              onChange={(newStart, newEnd) => {
-                setTrimStart(newStart);
-                setTrimEnd(newEnd);
+          <div style={{ width: 400, marginBottom: 16 }}>
+            <WaveSurfer
+              audioFile={URL.createObjectURL(recordedBlob)}
+              options={{
+                waveColor: '#43cea2',
+                progressColor: '#185a9d',
+                height: 80,
+                responsive: true,
+                plugins: [
+                  WaveSurfer.regions.create({
+                    regions: [
+                      {
+                        start: trimStart,
+                        end: trimEnd,
+                        color: 'rgba(67,206,162,0.2)',
+                        drag: true,
+                        resize: true,
+                      },
+                    ],
+                  }),
+                ],
               }}
+              onReady={handleWaveSurferReady}
             />
-          )}
+          </div>
+          <div style={{ fontSize: 16, color: '#555', marginBottom: 8 }}>
+            Start: {trimStart.toFixed(2)}s &nbsp; | &nbsp; Slutt: {trimEnd.toFixed(2)}s
+          </div>
           <input
             type="text"
             placeholder="Gi opptaket et navn..."
