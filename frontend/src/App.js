@@ -123,11 +123,64 @@ function App() {
     if (audioDuration > 0 && (trimStart > 0 || trimEnd < audioDuration)) {
       blobToSave = await trimAudio(recordedBlob, trimStart, trimEnd);
     }
-    // TODO: Upload logic here, use blobToSave
+    // Upload logic
+    const formData = new FormData();
+    formData.append('file', blobToSave, name ? name + '.wav' : 'opptak.wav');
+    formData.append('name', name);
+    try {
+      const res = await fetch('/api/upload', {
+        method: 'POST',
+        body: formData
+      });
+      if (!res.ok) throw new Error('Opplasting feilet');
+      alert('Opptaket ble lagret!');
+    } catch (err) {
+      alert('Feil under opplasting: ' + err.message);
+    }
     setShowNameForm(false);
     setName('');
     setRecordedBlob(null);
   };
+
+  // Custom RangeSlider component for trimming
+  function RangeSlider({ min, max, start, end, onChange }) {
+    // Calculate percent positions for handles
+    const percentStart = ((start - min) / (max - min)) * 100;
+    const percentEnd = ((end - min) / (max - min)) * 100;
+    return (
+      <div style={{ position: 'relative', width: 320, height: 36, marginBottom: 16 }}>
+        {/* Track */}
+        <div style={{ position: 'absolute', top: 16, left: 0, right: 0, height: 4, background: '#ddd', borderRadius: 2 }} />
+        {/* Selected region */}
+        <div style={{ position: 'absolute', top: 16, left: `${percentStart}%`, width: `${percentEnd - percentStart}%`, height: 4, background: 'linear-gradient(90deg,#43cea2,#185a9d)', borderRadius: 2 }} />
+        {/* Start handle */}
+        <input
+          type="range"
+          min={min}
+          max={max}
+          step={0.01}
+          value={start}
+          onChange={e => onChange(Math.min(Number(e.target.value), end - 0.01), end)}
+          style={{ position: 'absolute', top: 0, left: 0, width: '100%', pointerEvents: 'auto', background: 'none' }}
+        />
+        {/* End handle */}
+        <input
+          type="range"
+          min={min}
+          max={max}
+          step={0.01}
+          value={end}
+          onChange={e => onChange(start, Math.max(Number(e.target.value), start + 0.01))}
+          style={{ position: 'absolute', top: 0, left: 0, width: '100%', pointerEvents: 'auto', background: 'none' }}
+        />
+        {/* Labels */}
+        <div style={{ position: 'absolute', top: 28, left: 0, width: '100%', display: 'flex', justifyContent: 'space-between', fontSize: 14, color: '#555' }}>
+          <span>Start: {start.toFixed(2)}s</span>
+          <span>Slutt: {end.toFixed(2)}s</span>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div style={{
@@ -191,32 +244,28 @@ function App() {
             src={URL.createObjectURL(recordedBlob)}
             style={{ marginBottom: 16 }}
             onLoadedMetadata={handleAudioLoaded}
+            onPlay={() => {
+              // Seek to trimStart when play is pressed
+              if (audioRef.current) audioRef.current.currentTime = trimStart;
+            }}
+            onTimeUpdate={() => {
+              // Pause at trimEnd
+              if (audioRef.current && audioRef.current.currentTime >= trimEnd) {
+                audioRef.current.pause();
+              }
+            }}
           />
           {audioDuration > 0 && (
-            <div style={{ width: 320, marginBottom: 16 }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 14, color: '#555' }}>
-                <span>Start: {trimStart.toFixed(2)}s</span>
-                <span>Slutt: {trimEnd.toFixed(2)}s</span>
-              </div>
-              <input
-                type="range"
-                min={0}
-                max={audioDuration}
-                step={0.01}
-                value={trimStart}
-                onChange={e => setTrimStart(Math.min(Number(e.target.value), trimEnd - 0.01))}
-                style={{ width: '100%', marginBottom: 8 }}
-              />
-              <input
-                type="range"
-                min={0}
-                max={audioDuration}
-                step={0.01}
-                value={trimEnd}
-                onChange={e => setTrimEnd(Math.max(Number(e.target.value), trimStart + 0.01))}
-                style={{ width: '100%' }}
-              />
-            </div>
+            <RangeSlider
+              min={0}
+              max={audioDuration}
+              start={trimStart}
+              end={trimEnd}
+              onChange={(newStart, newEnd) => {
+                setTrimStart(newStart);
+                setTrimEnd(newEnd);
+              }}
+            />
           )}
           <input
             type="text"
