@@ -1,5 +1,5 @@
 import React, { useState, useRef, useCallback } from 'react';
-import WaveSurfer from 'wavesurfer-react';
+import { WaveSurfer } from 'wavesurfer-react';
 
 function App() {
   const [isRecording, setIsRecording] = useState(false);
