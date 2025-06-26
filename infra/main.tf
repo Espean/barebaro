@@ -74,3 +74,10 @@ resource "azurerm_static_web_app" "frontend" {
   location            = "West Europe"
   sku_tier            = "Free"
 }
+
+resource "azurerm_static_web_app_custom_domain" "barebaro_no" {
+  static_web_app_id = azurerm_static_web_app.frontend.id
+  domain_name       = "barebaro.no"
+  validation_type   = "cname-delegation"
+}
+
