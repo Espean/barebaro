@@ -40,7 +40,6 @@ resource "azurerm_service_plan" "function" {
   location            = azurerm_resource_group.baroweb.location
   resource_group_name = azurerm_resource_group.baroweb.name
   os_type             = "Linux"
-  reserved            = true
   sku_name            = "Y1"
 }
 
@@ -78,9 +77,4 @@ resource "azurerm_static_web_app" "frontend" {
   identity {
     type = "SystemAssigned"
   }
-
-  # Lenke til GitHub repo (autodeploy via Actions)
-  repository_url      = "https://github.com/Espean/barebaro"
-  repository_branch = "main"
-  
 }
