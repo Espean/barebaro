@@ -1,12 +1,19 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 
 function App() {
   const [recordings, setRecordings] = useState([]);
   const [isRecording, setIsRecording] = useState(false);
   const [showFormIdx, setShowFormIdx] = useState(null);
   const [formData, setFormData] = useState({ name: '', category: '' });
+  const [cloudRecordings, setCloudRecordings] = useState([]);
   const mediaRecorderRef = useRef(null);
   const audioChunksRef = useRef([]);
+
+  useEffect(() => {
+    fetch('/api/list')
+      .then(res => res.json())
+      .then(setCloudRecordings);
+  }, []);
 
   const startRecording = async () => {
     const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
@@ -56,7 +63,7 @@ function App() {
       <button onClick={isRecording ? stopRecording : startRecording}>
         {isRecording ? 'Stop Recording' : 'Start Recording'}
       </button>
-      <h2>Recordings</h2>
+      <h2>Recordings (Not yet uploaded)</h2>
       <ul>
         {recordings.map((rec, idx) => (
           <li key={idx}>
@@ -76,6 +83,18 @@ function App() {
                 <button onClick={() => deleteRecording(idx)}>Delete</button>
               </>
             )}
+          </li>
+        ))}
+      </ul>
+      <h2>Saved Recordings</h2>
+      <ul>
+        {cloudRecordings.map((rec, idx) => (
+          <li key={rec.rowKey}>
+            <span>Name: {rec.name} </span>
+            <span>Category: {rec.category} </span>
+            <span>Size: {rec.size} bytes </span>
+            <span>Uploaded: {rec.uploadTime} </span>
+            {/* TODO: Add playback, delete, edit actions */}
           </li>
         ))}
       </ul>
