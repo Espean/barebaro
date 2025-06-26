@@ -1,6 +1,9 @@
 name: Run Terraform Plan and Apply with Azure CLI Login (OIDC)
 
-on: [push]
+on:
+  push:
+    paths:
+      - 'infra/**'
 
 permissions:
   id-token: write      # For OIDC auth
