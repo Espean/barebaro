@@ -9,10 +9,14 @@ function App() {
   const mediaRecorderRef = useRef(null);
   const audioChunksRef = useRef([]);
 
-  useEffect(() => {
+  const fetchCloudRecordings = () => {
     fetch('/api/list')
       .then(res => res.json())
       .then(setCloudRecordings);
+  };
+
+  useEffect(() => {
+    fetchCloudRecordings();
   }, []);
 
   const startRecording = async () => {
@@ -55,6 +59,7 @@ function App() {
     setRecordings((prev) => prev.map((rec, i) => i === idx ? { ...rec, name: formData.name, category: formData.category } : rec));
     setShowFormIdx(null);
     setFormData({ name: '', category: '' });
+    fetchCloudRecordings(); // Refresh the cloud recordings list after save
   };
 
   return (
