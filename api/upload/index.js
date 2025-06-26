@@ -3,7 +3,7 @@ const { TableClient, AzureNamedKeyCredential } = require('@azure/data-tables');
 const { v4: uuidv4 } = require('uuid');
 
 module.exports = async function (context, req) {
-  if (!req.body) {
+  if (!req.body && !req.rawBody) {
     context.res = { status: 400, body: 'No file uploaded.' };
     return;
   }
@@ -12,6 +12,10 @@ module.exports = async function (context, req) {
   const containerName = "recordings";
   const tableName = process.env["METADATA_TABLE_NAME"] || "audiometadata";
   const blobName = uuidv4() + ".webm";
+
+  // Get metadata from form fields
+  const name = req.query.name || (req.body && req.body.name) || (req.body && req.body.get && req.body.get('name'));
+  const category = req.query.category || (req.body && req.body.category) || (req.body && req.body.get && req.body.get('category'));
 
   // Upload to Blob Storage
   const blobServiceClient = BlobServiceClient.fromConnectionString(connectionString);
@@ -40,7 +44,9 @@ module.exports = async function (context, req) {
       rowKey: blobName,
       fileName: blobName,
       uploadTime: new Date().toISOString(),
-      size: buffer.length
+      size: buffer.length,
+      name: name || '',
+      category: category || ''
     };
     await tableClient.createEntity(entity);
   }
