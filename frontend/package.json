@@ -11,6 +11,8 @@
     "react-scripts": "5.0.1"
   },
   "scripts": {
+    "preinstall": "node -v && npm -v",
+    "postinstall": "ls -l node_modules && npm list --depth=0",
     "start": "react-scripts start",
     "build": "react-scripts build",
     "test": "react-scripts test",
