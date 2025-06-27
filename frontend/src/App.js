@@ -225,32 +225,36 @@ function App() {
       {showNameForm && recordedBlob && (
         <form onSubmit={handleSave} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 16 }}>
           <div style={{ width: 400, marginBottom: 16 }}>
-            <WaveSurfer
-              audioFile={URL.createObjectURL(recordedBlob)}
-              options={{
-                waveColor: '#43cea2',
-                progressColor: '#185a9d',
-                height: 80,
-                responsive: true,
-                plugins: [
-                  WaveSurfer.regions.create({
-                    regions: [
-                      {
-                        start: trimStart,
-                        end: trimEnd,
-                        color: 'rgba(67,206,162,0.2)',
-                        drag: true,
-                        resize: true,
-                      },
-                    ],
-                  }),
-                ],
-              }}
-              onReady={handleWaveSurferReady}
-            />
+            {recordedBlob ? (
+              <WaveSurfer
+                audioFile={URL.createObjectURL(recordedBlob)}
+                options={{
+                  waveColor: '#43cea2',
+                  progressColor: '#185a9d',
+                  height: 80,
+                  responsive: true,
+                  plugins: [
+                    WaveSurfer.regions.create({
+                      regions: [
+                        {
+                          start: trimStart,
+                          end: trimEnd,
+                          color: 'rgba(67,206,162,0.2)',
+                          drag: true,
+                          resize: true,
+                        },
+                      ],
+                    }),
+                  ],
+                }}
+                onReady={handleWaveSurferReady}
+              />
+            ) : (
+              <div style={{ color: '#888', textAlign: 'center', padding: 24 }}>Ingen lydopptak funnet.</div>
+            )}
           </div>
           <div style={{ fontSize: 16, color: '#555', marginBottom: 8 }}>
-            Start: {trimStart.toFixed(2)}s &nbsp; | &nbsp; Slutt: {trimEnd.toFixed(2)}s
+            Start: {isFinite(trimStart) ? trimStart.toFixed(2) : '0.00'}s &nbsp; | &nbsp; Slutt: {isFinite(trimEnd) ? trimEnd.toFixed(2) : '0.00'}s
           </div>
           <input
             type="text"
