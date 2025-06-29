@@ -1,6 +1,6 @@
 import React, { useState, useRef, useCallback } from 'react';
-import { WaveSurfer } from 'wavesurfer-react';
-import RegionsPlugin from 'wavesurfer.js/dist/plugins/regions.esm.js'; // <-- Add this import
+import WaveSurfer from 'wavesurfer-react';
+import RegionsPlugin from 'wavesurfer.js/dist/plugins/regions.js';
 
 function App() {
   const [isRecording, setIsRecording] = useState(false);
@@ -10,7 +10,7 @@ function App() {
   const [audioDuration, setAudioDuration] = useState(0);
   const [trimStart, setTrimStart] = useState(0);
   const [trimEnd, setTrimEnd] = useState(0);
-  const [waveSurfer, setWaveSurfer] = useState(null);
+  const waveSurferRef = useRef(null);
   const mediaRecorderRef = useRef(null);
   const audioChunksRef = useRef([]);
 
@@ -36,14 +36,6 @@ function App() {
   };
 
   const handleNameChange = (e) => setName(e.target.value);
-
-  // When audio loads, set duration and default trim range
-  const handleAudioLoaded = (e) => {
-    const duration = e.target.duration;
-    setAudioDuration(duration);
-    setTrimStart(0);
-    setTrimEnd(duration);
-  };
 
   // Trimming logic using Web Audio API
   const trimAudio = async (blob, start, end) => {
@@ -152,7 +144,7 @@ function App() {
 
   // When a new blob is loaded, create a region for the full audio
   const handleWaveSurferReady = useCallback((ws) => {
-    setWaveSurfer(ws);
+    waveSurferRef.current = ws;
     ws.clearRegions();
     ws.addRegion({
       start: 0,
@@ -167,6 +159,9 @@ function App() {
       setTrimStart(region.start);
       setTrimEnd(region.end);
     });
+    setAudioDuration(ws.getDuration());
+    setTrimStart(0);
+    setTrimEnd(ws.getDuration());
   }, [handleRegionUpdate]);
 
   return (
@@ -228,14 +223,14 @@ function App() {
           <div style={{ width: 400, marginBottom: 16 }}>
             {recordedBlob ? (
               <WaveSurfer
-                audioFile={URL.createObjectURL(recordedBlob)}
-                options={{
-                  waveColor: '#43cea2',
-                  progressColor: '#185a9d',
-                  height: 80,
-                  responsive: true,
-                  plugins: [
-                    RegionsPlugin.create({
+                height={80}
+                waveColor="#43cea2"
+                progressColor="#185a9d"
+                url={URL.createObjectURL(recordedBlob)}
+                plugins={[
+                  {
+                    plugin: RegionsPlugin,
+                    options: {
                       regions: [
                         {
                           start: trimStart,
@@ -245,9 +240,9 @@ function App() {
                           resize: true,
                         },
                       ],
-                    }),
-                  ],
-                }}
+                    },
+                  },
+                ]}
                 onReady={handleWaveSurferReady}
               />
             ) : (
