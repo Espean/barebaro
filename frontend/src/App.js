@@ -1,13 +1,10 @@
 import React, { useState, useRef } from 'react';
-import WaveSurfer from 'wavesurfer-react';
-import RegionsPlugin from 'wavesurfer.js/dist/plugins/regions.js';
 
 function App() {
   const [isRecording, setIsRecording] = useState(false);
   const [recordedBlob, setRecordedBlob] = useState(null);
   const [name, setName] = useState('');
   const [showNameForm, setShowNameForm] = useState(false);
-  const waveSurferRef = useRef(null);
   const mediaRecorderRef = useRef(null);
   const audioChunksRef = useRef([]);
 
@@ -113,12 +110,7 @@ function App() {
         <form onSubmit={handleSave} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 16 }}>
           <div style={{ width: 400, marginBottom: 16 }}>
             {recordedBlob ? (
-              <WaveSurfer
-                height={80}
-                waveColor="#43cea2"
-                progressColor="#185a9d"
-                url={URL.createObjectURL(recordedBlob)}
-              />
+              <audio controls src={URL.createObjectURL(recordedBlob)} style={{ width: '100%' }} />
             ) : (
               <div style={{ color: '#888', textAlign: 'center', padding: 24 }}>Ingen lydopptak funnet.</div>
             )}
