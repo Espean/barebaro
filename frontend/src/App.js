@@ -1,5 +1,5 @@
 import React, { useState, useRef, useCallback } from 'react';
-import { WaveSurfer } from 'wavesurfer-react';
+import WaveSurfer from 'wavesurfer-react';
 import RegionsPlugin from 'wavesurfer.js/dist/plugins/regions.esm.js'; // <-- Add this import
 
 function App() {
