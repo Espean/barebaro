@@ -1,6 +1,8 @@
 {
   "dependencies": {
     "@wavesurfer/react": "^1.0.11",
+    "react": "^19.1.0",
+    "react-dom": "^19.1.0",
     "wavesurfer.js": "^7.9.9"
   }
 }
