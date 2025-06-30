@@ -6,11 +6,6 @@ function App() {
   const [recordedBlob, setRecordedBlob] = useState(null);
   const [name, setName] = useState('');
   const [showNameForm, setShowNameForm] = useState(false);
-  const [audioDuration, setAudioDuration] = useState(0);
-  const [trimStart, setTrimStart] = useState(0);
-  const [trimEnd, setTrimEnd] = useState(0);
-  const [isPlaying, setIsPlaying] = useState(false);
-
   const waveSurferRef = useRef(null);
   const mediaRecorderRef = useRef(null);
   const audioChunksRef = useRef([]);
@@ -53,45 +48,6 @@ function App() {
     setShowNameForm(false);
     setName('');
     setRecordedBlob(null);
-  };
-
-  // When waveform is ready, get duration and set region
-  const handleWaveSurferReady = (ws) => {
-    waveSurferRef.current = ws;
-    const duration = ws.getDuration();
-    setAudioDuration(duration);
-    setTrimStart(0);
-    setTrimEnd(duration);
-  };
-
-  // Play only the selected region
-  const handlePlayRegion = () => {
-    if (waveSurferRef.current) {
-      waveSurferRef.current.play(trimStart, trimEnd);
-      setIsPlaying(true);
-      waveSurferRef.current.once('pause', () => setIsPlaying(false));
-      waveSurferRef.current.once('finish', () => setIsPlaying(false));
-    }
-  };
-
-  // Record new
-  const handleRecordNew = () => {
-    setRecordedBlob(null);
-    setShowNameForm(false);
-    setName('');
-    setTrimStart(0);
-    setTrimEnd(0);
-    setAudioDuration(0);
-  };
-
-  // Slider handlers
-  const handleSliderChange = (which, value) => {
-    value = Math.max(0, Math.min(audioDuration, value));
-    if (which === 'start') {
-      setTrimStart(Math.min(value, trimEnd - 0.01));
-    } else {
-      setTrimEnd(Math.max(value, trimStart + 0.01));
-    }
   };
 
   return (
@@ -145,90 +101,10 @@ function App() {
               waveColor="#43cea2"
               progressColor="#185a9d"
               url={URL.createObjectURL(recordedBlob)}
-              onReady={handleWaveSurferReady}
+              onReady={(ws) => (waveSurferRef.current = ws)}
             />
-            {audioDuration > 0 && (
-              <div style={{
-                display: 'flex',
-                alignItems: 'center',
-                marginTop: 16,
-                width: '100%'
-              }}>
-                {/* Start handle */}
-                <input
-                  type="range"
-                  min={0}
-                  max={audioDuration}
-                  step={0.01}
-                  value={trimStart}
-                  onChange={e => handleSliderChange('start', parseFloat(e.target.value))}
-                  style={{
-                    flex: 1,
-                    accentColor: '#43cea2',
-                    marginRight: 8
-                  }}
-                />
-                {/* Play button */}
-                <button
-                  type="button"
-                  onClick={handlePlayRegion}
-                  disabled={isPlaying}
-                  style={{
-                    background: isPlaying
-                      ? 'linear-gradient(90deg, #bdbdbd 0%, #bdbdbd 100%)'
-                      : 'linear-gradient(90deg, #43cea2 0%, #185a9d 100%)',
-                    color: '#fff',
-                    border: 'none',
-                    borderRadius: 50,
-                    padding: '8px 18px',
-                    fontSize: 18,
-                    fontWeight: 600,
-                    cursor: isPlaying ? 'not-allowed' : 'pointer',
-                    transition: 'background 0.2s',
-                    margin: '0 8px'
-                  }}
-                >
-                  ▶
-                </button>
-                {/* End handle */}
-                <input
-                  type="range"
-                  min={0}
-                  max={audioDuration}
-                  step={0.01}
-                  value={trimEnd}
-                  onChange={e => handleSliderChange('end', parseFloat(e.target.value))}
-                  style={{
-                    flex: 1,
-                    accentColor: '#185a9d',
-                    marginLeft: 8
-                  }}
-                />
-                {/* Record new button */}
-                <button
-                  type="button"
-                  onClick={handleRecordNew}
-                  style={{
-                    background: 'linear-gradient(90deg, #ff5858 0%, #f09819 100%)',
-                    color: '#fff',
-                    border: 'none',
-                    borderRadius: 50,
-                    padding: '8px 18px',
-                    fontSize: 18,
-                    fontWeight: 600,
-                    cursor: 'pointer',
-                    transition: 'background 0.2s',
-                    marginLeft: 8
-                  }}
-                >
-                  ⟳
-                </button>
-              </div>
-            )}
-            <div style={{ fontSize: 16, color: '#555', marginTop: 8 }}>
-              Start: {isFinite(trimStart) ? trimStart.toFixed(2) : '0.00'}s &nbsp; | &nbsp; Slutt: {isFinite(trimEnd) ? trimEnd.toFixed(2) : '0.00'}s
-            </div>
           </div>
+
           <input
             type="text"
             placeholder="Gi opptaket et navn..."
@@ -241,6 +117,7 @@ function App() {
               marginBottom: 8, width: 300
             }}
           />
+
           <button type="submit" style={{
             background: 'linear-gradient(90deg, #43cea2 0%, #185a9d 100%)',
             color: '#fff', border: 'none', borderRadius: 50,
