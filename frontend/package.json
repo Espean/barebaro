@@ -3,9 +3,11 @@
   "version": "0.1.0",
   "private": true,
   "dependencies": {
+    "@wavesurfer/react": "^1.0.11",
     "react": "^18.0.0",
     "react-dom": "^18.0.0",
-    "react-scripts": "5.0.1"
+    "react-scripts": "5.0.1",
+    "wavesurfer.js": "^7.9.9"
   },
   "scripts": {
     "preinstall": "node -v && npm -v",
