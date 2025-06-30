@@ -1,5 +1,5 @@
 import React, { useState, useRef } from 'react';
-import WaveSurfer from 'wavesurfer-react';
+import { WaveSurferPlayer } from 'wavesurfer-react';
 
 function App() {
   const [isRecording, setIsRecording] = useState(false);
@@ -111,16 +111,16 @@ function App() {
       {showNameForm && recordedBlob && (
         <form onSubmit={handleSave} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 16 }}>
           <div style={{ width: 400, marginBottom: 16 }}>
-            {recordedBlob ? (
-              <WaveSurfer
-                height={80}
-                waveColor="#43cea2"
-                progressColor="#185a9d"
-                url={URL.createObjectURL(recordedBlob)}
-              />
-            ) : (
-              <div style={{ color: '#888', textAlign: 'center', padding: 24 }}>Ingen lydopptak funnet.</div>
-            )}
+          {recordedBlob ? (
+            <WaveSurferPlayer
+              height={80}
+              waveColor="#43cea2"
+              progressColor="#185a9d"
+              src={URL.createObjectURL(recordedBlob)}
+            />
+          ) : (
+            <div style={{ color: '#888', textAlign: 'center', padding: 24 }}>Ingen lydopptak funnet.</div>
+          )}
           </div>
           <input
             type="text"
