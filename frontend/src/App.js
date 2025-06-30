@@ -1,11 +1,14 @@
 import React, { useState, useRef } from 'react';
 import WavesurferPlayer from '@wavesurfer/react';
+import RegionsPlugin from 'wavesurfer.js/dist/plugins/regions.js';
 
 function App() {
   const [isRecording, setIsRecording] = useState(false);
   const [recordedBlob, setRecordedBlob] = useState(null);
   const [name, setName] = useState('');
   const [showNameForm, setShowNameForm] = useState(false);
+  const [trimStart, setTrimStart] = useState(0);
+  const [trimEnd, setTrimEnd] = useState(0);
   const waveSurferRef = useRef(null);
   const mediaRecorderRef = useRef(null);
   const audioChunksRef = useRef([]);
@@ -48,6 +51,30 @@ function App() {
     setShowNameForm(false);
     setName('');
     setRecordedBlob(null);
+  };
+
+  const handleWaveSurferReady = (ws) => {
+    waveSurferRef.current = ws;
+    const regionsPlugin = waveSurferRef.current.getActivePlugins().find(p => p.constructor.name === 'RegionsPlugin');
+    if (regionsPlugin) {
+      regionsPlugin.clear();
+      regionsPlugin.addRegion({
+        start: trimStart,
+        end: trimEnd,
+        color: 'rgba(67,206,162,0.3)',
+        drag: true,
+        resize: true,
+      });
+      // Listen for region updates and update trimStart/trimEnd
+      regionsPlugin.on('region-updated', (region) => {
+        setTrimStart(region.start);
+        setTrimEnd(region.end);
+      });
+      regionsPlugin.on('region-update-end', (region) => {
+        setTrimStart(region.start);
+        setTrimEnd(region.end);
+      });
+    }
   };
 
   return (
@@ -101,7 +128,23 @@ function App() {
               waveColor="#43cea2"
               progressColor="#185a9d"
               url={URL.createObjectURL(recordedBlob)}
-              onReady={(ws) => (waveSurferRef.current = ws)}
+              plugins={[
+                {
+                  plugin: RegionsPlugin,
+                  options: {
+                    regions: [
+                      {
+                        start: trimStart,
+                        end: trimEnd,
+                        color: 'rgba(67,206,162,0.3)',
+                        drag: true,
+                        resize: true,
+                      },
+                    ],
+                  },
+                },
+              ]}
+              onReady={handleWaveSurferReady}
             />
           </div>
 
