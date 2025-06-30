@@ -1,4 +1,5 @@
 import React, { useState, useRef } from 'react';
+import WaveSurfer from 'wavesurfer.js';
 import RegionsPlugin from 'wavesurfer.js/dist/plugins/regions.js';
 
 function App() {
