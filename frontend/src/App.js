@@ -1,6 +1,5 @@
 import React, { useState, useRef } from 'react';
-import WaveSurfer from 'wavesurfer.js';
-import RegionsPlugin from 'wavesurfer.js/dist/plugins/regions.js';
+import WaveSurfer from 'wavesurfer-react';
 
 function App() {
   const [isRecording, setIsRecording] = useState(false);
