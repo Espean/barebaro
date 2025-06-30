@@ -1,5 +1,5 @@
 import React, { useState, useRef } from 'react';
-import { WavesurferPlayer } from '@wavesurfer/react';
+import WavesurferPlayer from '@wavesurfer/react'; // ✅ default export
 
 function App() {
   const [isRecording, setIsRecording] = useState(false);
@@ -39,10 +39,7 @@ function App() {
     formData.append('file', recordedBlob, name ? name + '.wav' : 'opptak.wav');
     formData.append('name', name);
     try {
-      const res = await fetch('/api/upload', {
-        method: 'POST',
-        body: formData
-      });
+      const res = await fetch('/api/upload', { method: 'POST', body: formData });
       if (!res.ok) throw new Error('Opplasting feilet');
       alert('Opptaket ble lagret!');
     } catch (err) {
@@ -63,48 +60,34 @@ function App() {
       justifyContent: 'center',
       fontFamily: 'Segoe UI, sans-serif'
     }}>
-      <h1 style={{ fontSize: 48, fontWeight: 700, color: '#2d3a4b', marginBottom: 40 }}>Barebaros lyd</h1>
+      <h1 style={{ fontSize: 48, fontWeight: 700, color: '#2d3a4b', marginBottom: 40 }}>
+        Barebaros lyd
+      </h1>
 
       {!isRecording && !showNameForm && (
-        <button
-          onClick={startRecording}
-          style={{
-            background: 'linear-gradient(90deg, #667eea 0%, #764ba2 100%)',
-            color: '#fff',
-            border: 'none',
-            borderRadius: 50,
-            padding: '24px 64px',
-            fontSize: 28,
-            fontWeight: 600,
-            boxShadow: '0 8px 32px rgba(102,126,234,0.2)',
-            cursor: 'pointer',
-            transition: 'background 0.2s',
-            marginBottom: 32
-          }}
-        >
+        <button onClick={startRecording} style={{
+          background: 'linear-gradient(90deg, #667eea 0%, #764ba2 100%)',
+          color: '#fff', border: 'none', borderRadius: 50,
+          padding: '24px 64px', fontSize: 28, fontWeight: 600,
+          boxShadow: '0 8px 32px rgba(102,126,234,0.2)',
+          cursor: 'pointer', transition: 'background 0.2s', marginBottom: 32
+        }}>
           Start opptak
         </button>
       )}
 
       {isRecording && (
         <>
-          <div style={{ fontSize: 22, color: '#764ba2', marginBottom: 16 }}>Opptak pågår...</div>
-          <button
-            onClick={stopRecording}
-            style={{
-              background: 'linear-gradient(90deg, #ff5858 0%, #f09819 100%)',
-              color: '#fff',
-              border: 'none',
-              borderRadius: 50,
-              padding: '20px 56px',
-              fontSize: 24,
-              fontWeight: 600,
-              boxShadow: '0 8px 32px rgba(255,88,88,0.15)',
-              cursor: 'pointer',
-              transition: 'background 0.2s',
-              marginBottom: 32
-            }}
-          >
+          <div style={{ fontSize: 22, color: '#764ba2', marginBottom: 16 }}>
+            Opptak pågår...
+          </div>
+          <button onClick={stopRecording} style={{
+            background: 'linear-gradient(90deg, #ff5858 0%, #f09819 100%)',
+            color: '#fff', border: 'none', borderRadius: 50,
+            padding: '20px 56px', fontSize: 24, fontWeight: 600,
+            boxShadow: '0 8px 32px rgba(255,88,88,0.15)',
+            cursor: 'pointer', transition: 'background 0.2s', marginBottom: 32
+          }}>
             Stopp
           </button>
         </>
@@ -129,30 +112,19 @@ function App() {
             onChange={handleNameChange}
             required
             style={{
-              fontSize: 20,
-              padding: '12px 24px',
-              borderRadius: 8,
-              border: '1px solid #ccc',
-              marginBottom: 8,
-              width: 300
+              fontSize: 20, padding: '12px 24px',
+              borderRadius: 8, border: '1px solid #ccc',
+              marginBottom: 8, width: 300
             }}
           />
 
-          <button
-            type="submit"
-            style={{
-              background: 'linear-gradient(90deg, #43cea2 0%, #185a9d 100%)',
-              color: '#fff',
-              border: 'none',
-              borderRadius: 50,
-              padding: '16px 48px',
-              fontSize: 22,
-              fontWeight: 600,
-              boxShadow: '0 8px 32px rgba(67,206,162,0.15)',
-              cursor: 'pointer',
-              transition: 'background 0.2s'
-            }}
-          >
+          <button type="submit" style={{
+            background: 'linear-gradient(90deg, #43cea2 0%, #185a9d 100%)',
+            color: '#fff', border: 'none', borderRadius: 50,
+            padding: '16px 48px', fontSize: 22, fontWeight: 600,
+            boxShadow: '0 8px 32px rgba(67,206,162,0.15)',
+            cursor: 'pointer', transition: 'background 0.2s'
+          }}>
             Lagre opptak
           </button>
         </form>
