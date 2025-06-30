@@ -1,5 +1,5 @@
 import React, { useState, useRef } from 'react';
-import { WaveSurfer } from 'wavesurfer-react';
+import { WavesurferPlayer } from '@wavesurfer/react';
 
 function App() {
   const [isRecording, setIsRecording] = useState(false);
@@ -35,7 +35,6 @@ function App() {
 
   const handleSave = async (e) => {
     e.preventDefault();
-    // Upload logic
     const formData = new FormData();
     formData.append('file', recordedBlob, name ? name + '.wav' : 'opptak.wav');
     formData.append('name', name);
@@ -65,6 +64,7 @@ function App() {
       fontFamily: 'Segoe UI, sans-serif'
     }}>
       <h1 style={{ fontSize: 48, fontWeight: 700, color: '#2d3a4b', marginBottom: 40 }}>Barebaros lyd</h1>
+
       {!isRecording && !showNameForm && (
         <button
           onClick={startRecording}
@@ -85,6 +85,7 @@ function App() {
           Start opptak
         </button>
       )}
+
       {isRecording && (
         <>
           <div style={{ fontSize: 22, color: '#764ba2', marginBottom: 16 }}>Opptak pågår...</div>
@@ -108,23 +109,19 @@ function App() {
           </button>
         </>
       )}
+
       {showNameForm && recordedBlob && (
         <form onSubmit={handleSave} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 16 }}>
           <div style={{ width: 400, marginBottom: 16 }}>
-            {recordedBlob ? (
-            <WaveSurfer
+            <WavesurferPlayer
               height={80}
               waveColor="#43cea2"
               progressColor="#185a9d"
-              onMount={(ws) => {
-                waveSurferRef.current = ws;
-                ws.load(URL.createObjectURL(recordedBlob));
-              }}
+              url={URL.createObjectURL(recordedBlob)}
+              onReady={(ws) => (waveSurferRef.current = ws)}
             />
-            ) : (
-              <div style={{ color: '#888', textAlign: 'center', padding: 24 }}>Ingen lydopptak funnet.</div>
-            )}
           </div>
+
           <input
             type="text"
             placeholder="Gi opptaket et navn..."
@@ -140,6 +137,7 @@ function App() {
               width: 300
             }}
           />
+
           <button
             type="submit"
             style={{

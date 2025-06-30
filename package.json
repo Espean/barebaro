@@ -1,6 +1,6 @@
 {
   "dependencies": {
-    "wavesurfer-react": "^3.0.4",
+    "@wavesurfer/react": "^1.0.11",
     "wavesurfer.js": "^7.9.9"
   }
 }
