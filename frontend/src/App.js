@@ -4,11 +4,28 @@ import WavesurferPlayer from '@wavesurfer/react';
 function App() {
   const [isRecording, setIsRecording] = useState(false);
   const [recordedBlob, setRecordedBlob] = useState(null);
+  const [recordedUrl, setRecordedUrl] = useState(null); // NEW: store object URL
   const [name, setName] = useState('');
   const [showNameForm, setShowNameForm] = useState(false);
+  const [isPlaying, setIsPlaying] = useState(false);
+  const [playerReady, setPlayerReady] = useState(false);
   const waveSurferRef = useRef(null);
   const mediaRecorderRef = useRef(null);
   const audioChunksRef = useRef([]);
+
+  // Clean up object URL when blob changes or on unmount
+  React.useEffect(() => {
+    if (recordedBlob) {
+      const url = URL.createObjectURL(recordedBlob);
+      setRecordedUrl(url);
+      return () => {
+        URL.revokeObjectURL(url);
+        setRecordedUrl(null);
+      };
+    } else {
+      setRecordedUrl(null);
+    }
+  }, [recordedBlob]);
 
   const startRecording = async () => {
     const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
@@ -50,6 +67,34 @@ function App() {
     setRecordedBlob(null);
   };
 
+  // Play/pause full audio
+  const handlePlayPause = () => {
+    if (waveSurferRef.current) {
+      if (isPlaying) {
+        waveSurferRef.current.pause();
+        setIsPlaying(false);
+      } else {
+        waveSurferRef.current.play();
+        setIsPlaying(true);
+        waveSurferRef.current.once('pause', () => setIsPlaying(false));
+        waveSurferRef.current.once('finish', () => setIsPlaying(false));
+      }
+    }
+  };
+
+  // Record new
+  const handleRecordNew = () => {
+    setRecordedBlob(null);
+    setShowNameForm(false);
+    setName('');
+    setIsPlaying(false);
+    setPlayerReady(false);
+    if (recordedUrl) {
+      URL.revokeObjectURL(recordedUrl);
+      setRecordedUrl(null);
+    }
+  };
+
   return (
     <div style={{
       minHeight: '100vh',
@@ -58,9 +103,17 @@ function App() {
       flexDirection: 'column',
       alignItems: 'center',
       justifyContent: 'center',
-      fontFamily: 'Segoe UI, sans-serif'
+      fontFamily: 'Segoe UI, sans-serif',
+      padding: 16,
     }}>
-      <h1 style={{ fontSize: 48, fontWeight: 700, color: '#2d3a4b', marginBottom: 40 }}>
+      <h1 style={{
+        fontSize: 36,
+        fontWeight: 700,
+        color: '#2d3a4b',
+        marginBottom: 32,
+        textAlign: 'center',
+        lineHeight: 1.1,
+      }}>
         Barebaros lyd
       </h1>
 
@@ -68,9 +121,10 @@ function App() {
         <button onClick={startRecording} style={{
           background: 'linear-gradient(90deg, #667eea 0%, #764ba2 100%)',
           color: '#fff', border: 'none', borderRadius: 50,
-          padding: '24px 64px', fontSize: 28, fontWeight: 600,
+          padding: '20px 0', fontSize: 24, fontWeight: 600,
           boxShadow: '0 8px 32px rgba(102,126,234,0.2)',
-          cursor: 'pointer', transition: 'background 0.2s', marginBottom: 32
+          cursor: 'pointer', transition: 'background 0.2s', marginBottom: 32,
+          width: '100%', maxWidth: 400,
         }}>
           Start opptak
         </button>
@@ -78,15 +132,16 @@ function App() {
 
       {isRecording && (
         <>
-          <div style={{ fontSize: 22, color: '#764ba2', marginBottom: 16 }}>
+          <div style={{ fontSize: 20, color: '#764ba2', marginBottom: 16 }}>
             Opptak pågår...
           </div>
           <button onClick={stopRecording} style={{
             background: 'linear-gradient(90deg, #ff5858 0%, #f09819 100%)',
             color: '#fff', border: 'none', borderRadius: 50,
-            padding: '20px 56px', fontSize: 24, fontWeight: 600,
+            padding: '18px 0', fontSize: 22, fontWeight: 600,
             boxShadow: '0 8px 32px rgba(255,88,88,0.15)',
-            cursor: 'pointer', transition: 'background 0.2s', marginBottom: 32
+            cursor: 'pointer', transition: 'background 0.2s', marginBottom: 32,
+            width: '100%', maxWidth: 400,
           }}>
             Stopp
           </button>
@@ -94,15 +149,69 @@ function App() {
       )}
 
       {showNameForm && recordedBlob && (
-        <form onSubmit={handleSave} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 16 }}>
-          <div style={{ width: 400, marginBottom: 16 }}>
+        <form onSubmit={e => { e.preventDefault(); handleSave(e); }} style={{
+          display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 16, width: '100%', maxWidth: 420,
+        }}>
+          <div style={{
+            width: '100%', minWidth: 0, marginBottom: 16, overflowX: 'auto',
+          }}>
             <WavesurferPlayer
               height={80}
               waveColor="#43cea2"
               progressColor="#185a9d"
-              url={URL.createObjectURL(recordedBlob)}
-              onReady={(ws) => (waveSurferRef.current = ws)}
+              url={recordedUrl}
+              onReady={ws => {
+                waveSurferRef.current = ws;
+                setIsPlaying(false);
+                setPlayerReady(true);
+              }}
             />
+          </div>
+
+          <div style={{ display: 'flex', width: '100%', gap: 8, marginBottom: 8 }}>
+            <button
+              type="button"
+              onClick={handlePlayPause}
+              disabled={!playerReady || isPlaying}
+              style={{
+                background: isPlaying
+                  ? 'linear-gradient(90deg, #bdbdbd 0%, #bdbdbd 100%)'
+                  : 'linear-gradient(90deg, #43cea2 0%, #185a9d 100%)',
+                color: '#fff',
+                border: 'none',
+                borderRadius: 50,
+                padding: '12px 0',
+                fontSize: 18,
+                fontWeight: 600,
+                cursor: !playerReady || isPlaying ? 'not-allowed' : 'pointer',
+                transition: 'background 0.2s',
+                width: '100%',
+                maxWidth: 200,
+                flex: 1
+              }}
+            >
+              {isPlaying ? 'Spiller...' : '▶ Spill av opptak'}
+            </button>
+            <button
+              type="button"
+              onClick={handleRecordNew}
+              style={{
+                background: 'linear-gradient(90deg, #ff5858 0%, #f09819 100%)',
+                color: '#fff',
+                border: 'none',
+                borderRadius: 50,
+                padding: '12px 0',
+                fontSize: 18,
+                fontWeight: 600,
+                cursor: 'pointer',
+                transition: 'background 0.2s',
+                width: '100%',
+                maxWidth: 200,
+                flex: 1
+              }}
+            >
+              Ta opp nytt
+            </button>
           </div>
 
           <input
@@ -114,7 +223,7 @@ function App() {
             style={{
               fontSize: 20, padding: '12px 24px',
               borderRadius: 8, border: '1px solid #ccc',
-              marginBottom: 8, width: 300
+              marginBottom: 8, width: '100%', boxSizing: 'border-box', maxWidth: 400,
             }}
           />
 
@@ -123,7 +232,8 @@ function App() {
             color: '#fff', border: 'none', borderRadius: 50,
             padding: '16px 48px', fontSize: 22, fontWeight: 600,
             boxShadow: '0 8px 32px rgba(67,206,162,0.15)',
-            cursor: 'pointer', transition: 'background 0.2s'
+            cursor: 'pointer', transition: 'background 0.2s',
+            width: '100%', maxWidth: 400,
           }}>
             Lagre opptak
           </button>
