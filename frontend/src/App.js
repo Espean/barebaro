@@ -68,20 +68,19 @@ export default function App() {
       regions.addRegion({
         start: 0,
         end: Math.max(2, dur),
-        color: "rgba(46,204,113,0.35)",
+        color: "rgba(63, 23, 39, 0.35)",
         drag: true,
         resize: true,
         content: "RESIZE ME!",
       });
       console.log("WaveSurfer: Region added");
     });
-
     // Play when clicking region
     regions.on("region-clicked", (region, e) => {
-      console.log("WaveSurfer: region-clicked", region);
-      e.stopPropagation();
-      region.play(true);
+      e.stopPropagation() // prevent triggering a click on the waveform
+      region.play(true)
     });
+    
 
     regions.on("region-created", (region) => {
       // Only keep one region at a time
