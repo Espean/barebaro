@@ -11,11 +11,11 @@ export default function App() {
   const mediaRecorderRef = useRef(null);
   const audioChunksRef = useRef([]);
 
-  // Inject working CSS for bigger mobile handles
+  // 1) Inject all custom CSS, including the big 20px “handles” via region borders:
   useEffect(() => {
     const style = document.createElement("style");
     style.innerHTML = `
-      /* Region label styling */
+      /* region label styling */
       .ws-region-content {
         color: #212121 !important;
         font-weight: 900;
@@ -34,46 +34,32 @@ export default function App() {
         white-space: nowrap;
       }
 
-      /* MAKE HANDLES BIGGER & EASIER FOR TOUCH */
-      #waveform .wavesurfer-region-handle-left,
-      #waveform .wavesurfer-region-handle-right {
-        width: 20px !important;
-        min-width: 20px !important;
-        max-width: 20px !important;
-        background: #43cea2cc !important;
-        border-radius: 6px;
-        top: 0 !important;
-        bottom: 0 !important;
-        cursor: ew-resize !important;
-        z-index: 12 !important;
-        touch-action: none !important;
-      }
-      #waveform .wavesurfer-region-handle-left {
-        left: -10px !important;
-      }
-      #waveform .wavesurfer-region-handle-right {
-        right: -10px !important;
+      /* widen the region’s own borders to act as 20px handles */
+      #waveform .wavesurfer-region {
+        border-left: 20px solid #4aef95 !important;
+        border-right: 20px solid #4aef95 !important;
       }
     `;
     document.head.appendChild(style);
     return () => document.head.removeChild(style);
   }, []);
 
+  // 2) WaveSurfer + Regions setup
   useEffect(() => {
     if (!audioUrl || !waveformRef.current) return;
 
-    // Destroy previous instance
+    // clean up old instance
     if (wavesurferRef.current) {
       wavesurferRef.current.destroy();
     }
 
-    // Regions plugin setup
+    // create the Regions plugin
     const regions = RegionsPlugin.create({
       dragSelection: { color: "rgba(46,204,113,0.12)" },
     });
     regionsRef.current = regions;
 
-    // Create WaveSurfer
+    // init WaveSurfer
     const ws = WaveSurfer.create({
       container: waveformRef.current,
       waveColor: "#43cea2",
@@ -113,6 +99,7 @@ export default function App() {
     return () => ws.destroy();
   }, [audioUrl]);
 
+  // record / stop recording
   const handleRecordToggle = async () => {
     if (!isRecording) {
       setIsRecording(true);
@@ -197,10 +184,13 @@ export default function App() {
         minHeight: 180,
         display: audioUrl ? "block" : "none",
       }}>
+        {/* make sure it has the matching ID for our CSS override */}
         <div id="waveform" ref={waveformRef} style={{ width: "100%" }} />
+
         <div style={{ textAlign: "center", color: "#888", marginTop: 8 }}>
           Dra/endre det grønne området, <b>trykk på det for å spille av</b>
         </div>
+
         <div style={{
           display: "flex",
           justifyContent: "center",
@@ -224,6 +214,7 @@ export default function App() {
             Ta opp nytt
           </button>
         </div>
+
         <div style={{
           fontSize: 13,
           color: "#999",
