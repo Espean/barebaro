@@ -11,9 +11,11 @@ export default function App() {
   const mediaRecorderRef = useRef(null);
   const audioChunksRef = useRef([]);
 
+  // inject all of our custom CSS (region content + handles)
   useEffect(() => {
     const style = document.createElement("style");
     style.innerHTML = `
+      /* region label styling */
       .ws-region-content {
         color: #212121 !important;
         font-weight: 900;
@@ -31,6 +33,18 @@ export default function App() {
         box-shadow: 0 2px 16px #b8f2e6a8;
         white-space: nowrap;
       }
+
+      /* enlarge & style the right drag handle */
+      #waveform ::part(region-handle-right) {
+        border-right-width: 20px !important;
+        border-right-color: #fff000 !important;
+      }
+
+      /* enlarge & style the left drag handle */
+      #waveform ::part(region-handle-left) {
+        border-left-width: 20px !important;
+        border-left-color: #4aef95 !important;
+      }
     `;
     document.head.appendChild(style);
     return () => document.head.removeChild(style);
@@ -39,6 +53,7 @@ export default function App() {
   useEffect(() => {
     if (!audioUrl || !waveformRef.current) return;
 
+    // clean up any previous instance
     if (wavesurferRef.current) {
       wavesurferRef.current.destroy();
       console.log("WaveSurfer: Previous instance destroyed");
@@ -50,6 +65,7 @@ export default function App() {
     });
     regionsRef.current = regions;
 
+    // init WaveSurfer
     const ws = WaveSurfer.create({
       container: waveformRef.current,
       waveColor: "#43cea2",
@@ -64,7 +80,6 @@ export default function App() {
     ws.on("ready", () => {
       const dur = ws.getDuration();
       console.log("WaveSurfer: Ready, duration:", dur);
-      // Add region with plugin instance, not ws!
       regions.addRegion({
         start: 0,
         end: Math.max(2, dur),
@@ -75,15 +90,15 @@ export default function App() {
       });
       console.log("WaveSurfer: Region added");
     });
-    // Play when clicking region
-    regions.on("region-clicked", (region, e) => {
-      e.stopPropagation() // prevent triggering a click on the waveform
-      region.play(true)
-    });
-    
 
+    // play on region click
+    regions.on("region-clicked", (region, e) => {
+      e.stopPropagation();
+      region.play(true);
+    });
+
+    // only one region at a time
     regions.on("region-created", (region) => {
-      // Only keep one region at a time
       Object.values(regions.list).forEach((r) => {
         if (r.id !== region.id) regions.removeRegion(r.id);
       });
@@ -187,9 +202,6 @@ export default function App() {
         <div ref={waveformRef} style={{ width: "100%" }} />
         <div style={{ textAlign: "center", color: "#888", marginTop: 8 }}>
           Dra/endre det grønne området, <b>trykk på det for å spille av</b>
-        </div>
-        <div style={{ #waveform ::part(region-handle-right)
-            border-right-width: 20px !important;}}>
         </div>
         <div style={{
           display: "flex",
