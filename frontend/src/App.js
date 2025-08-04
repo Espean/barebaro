@@ -188,6 +188,9 @@ export default function App() {
         <div style={{ textAlign: "center", color: "#888", marginTop: 8 }}>
           Dra/endre det grønne området, <b>trykk på det for å spille av</b>
         </div>
+        <div style={{ #waveform ::part(region-handle-right)
+            border-right-width: 20px !important;}}>
+        </div>
         <div style={{
           display: "flex",
           justifyContent: "center",
