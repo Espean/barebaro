@@ -1,229 +1,146 @@
-import React, { useRef, useEffect, useState } from "react";
-import WaveSurfer from "wavesurfer.js";
-import RegionsPlugin from "wavesurfer.js/dist/plugins/regions.esm.js";
+import React, { useRef, useEffect, useState } from 'react';
+import WaveSurfer from 'wavesurfer.js';
+import RegionsPlugin from 'wavesurfer.js/dist/plugins/regions.esm.js';
 
-export default function App() {
+const WaveformRecorder = () => {
   const waveformRef = useRef(null);
   const wavesurferRef = useRef(null);
-  const regionsRef = useRef(null);
-  const [audioUrl, setAudioUrl] = useState(null);
-  const [isRecording, setIsRecording] = useState(false);
   const mediaRecorderRef = useRef(null);
-  const audioChunksRef = useRef([]);
+  const mediaStreamRef = useRef(null);
+  const [isRecording, setIsRecording] = useState(false);
+  const [isPlaying, setIsPlaying] = useState(false);
 
-  // inject all our custom CSS
+  // Initialize WaveSurfer on mount
   useEffect(() => {
-    const style = document.createElement("style");
-    style.innerHTML = `
-      /* region label styling */
-      .ws-region-content {
-        color: #212121 !important;
-        font-weight: 900;
-        font-size: 32px;
-        pointer-events: none;
-        padding: 5px 24px;
-        border-radius: 12px;
-        position: absolute !important;
-        left: 50%;
-        top: -52px;
-        background: rgba(255,255,255,0.95);
-        transform: translateX(-50%);
-        z-index: 99;
-        border: 2px solid #4aef95;
-        box-shadow: 0 2px 16px #b8f2e6a8;
-        white-space: nowrap;
-      }
+    if (!waveformRef.current) return;
 
-      /* ===== enlarge & color the region handles ===== */
-      #waveform .wavesurfer-region-handle-right {
-        border-right-width: 20px !important;
-        border-right-color: #fff000 !important;
+    // Create WaveSurfer instance with Regions plugin
+    wavesurferRef.current = WaveSurfer.create({
+      container: waveformRef.current,
+      waveColor: '#8e8e8e',           // waveform color
+      progressColor: '#555',         // playback progress color
+      cursorColor: '#333',           // cursor color
+      height: 80,                    // height of waveform in pixels
+      plugins: [
+        RegionsPlugin.create({})     // initialize the Regions plugin (no special options needed)
+      ]
+    });
+
+    // When audio is loaded into WaveSurfer, add a region
+    wavesurferRef.current.on('ready', () => {
+      const duration = wavesurferRef.current.getDuration();
+      // Define region end (2s or audio duration if shorter)
+      const regionEnd = duration < 2 ? duration : 2;
+      // Add a single region from 0 to regionEnd seconds
+      wavesurferRef.current.addRegion({
+        start: 0,
+        end: regionEnd,
+        color: 'rgba(0, 123, 255, 0.3)',  // translucent blue region overlay
+        drag: true,
+        resize: true
+      });
+    });
+
+    // Update play state for button label
+    wavesurferRef.current.on('play', () => setIsPlaying(true));
+    wavesurferRef.current.on('pause', () => setIsPlaying(false));
+    wavesurferRef.current.on('finish', () => setIsPlaying(false));
+
+    // Cleanup on unmount: destroy wavesurfer instance and stop media tracks if any
+    return () => {
+      if (mediaRecorderRef.current && mediaRecorderRef.current.state === 'recording') {
+        mediaRecorderRef.current.stop();
       }
-      #waveform .wavesurfer-region-handle-left {
-        border-left-width: 20px !important;
-        border-left-color: #4aef95 !important;
+      if (mediaStreamRef.current) {
+        mediaStreamRef.current.getTracks().forEach(t => t.stop());
       }
-    `;
-    document.head.appendChild(style);
-    return () => document.head.removeChild(style);
+      wavesurferRef.current.destroy();
+      wavesurferRef.current = null;
+    };
   }, []);
 
-  useEffect(() => {
-    if (!audioUrl || !waveformRef.current) return;
-
-    // destroy old instance
-    if (wavesurferRef.current) {
-      wavesurferRef.current.destroy();
-    }
-
-    // set up Regions plugin
-    const regions = RegionsPlugin.create({
-      dragSelection: { color: "rgba(46,204,113,0.12)" },
-    });
-    regionsRef.current = regions;
-
-    // create WaveSurfer
-    const ws = WaveSurfer.create({
-      container: waveformRef.current,
-      waveColor: "#43cea2",
-      progressColor: "#185a9d",
-      url: audioUrl,
-      height: 160,
-      plugins: [regions],
-      responsive: true,
-    });
-    wavesurferRef.current = ws;
-
-    ws.on("ready", () => {
-      const dur = ws.getDuration();
-      regions.addRegion({
-        start: 0,
-        end: Math.max(2, dur),
-        color: "rgba(63, 23, 39, 0.35)",
-        drag: true,
-        resize: true,
-        content: "RESIZE ME!",
-      });
-    });
-
-    regions.on("region-clicked", (region, e) => {
-      e.stopPropagation();
-      region.play(true);
-    });
-
-    regions.on("region-created", (region) => {
-      // only one at a time
-      Object.values(regions.list).forEach((r) => {
-        if (r.id !== region.id) regions.removeRegion(r.id);
-      });
-    });
-
-    ws.on("error", console.error);
-
-    return () => ws.destroy();
-  }, [audioUrl]);
-
-  const handleRecordToggle = async () => {
-    if (!isRecording) {
-      setIsRecording(true);
+  // Function to start recording
+  const startRecording = async () => {
+    try {
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-      mediaRecorderRef.current = new window.MediaRecorder(stream);
-      audioChunksRef.current = [];
-      mediaRecorderRef.current.ondataavailable = (e) => {
-        audioChunksRef.current.push(e.data);
+      mediaStreamRef.current = stream;
+      const mediaRecorder = new MediaRecorder(stream);
+      mediaRecorderRef.current = mediaRecorder;
+      const chunks = [];
+
+      mediaRecorder.ondataavailable = e => {
+        if (e.data.size > 0) {
+          chunks.push(e.data);
+        }
       };
-      mediaRecorderRef.current.onstop = () => {
-        const blob = new Blob(audioChunksRef.current, { type: "audio/webm" });
-        const url = URL.createObjectURL(blob);
-        setAudioUrl(url);
-        setIsRecording(false);
+
+      mediaRecorder.onstop = () => {
+        // Stop all audio tracks to release the microphone
+        stream.getTracks().forEach(t => t.stop());
+        // Create a blob from recorded chunks
+        const blob = new Blob(chunks, { type: chunks[0]?.type || 'audio/webm' });
+        // Load the recorded audio into WaveSurfer (this will trigger 'ready' event and draw waveform)
+        wavesurferRef.current.loadBlob(blob);
       };
-      mediaRecorderRef.current.start();
-    } else {
+
+      // Start recording
+      mediaRecorder.start();
+      setIsRecording(true);
+    } catch (err) {
+      console.error('Error accessing microphone', err);
+      alert('Could not access microphone for recording. Please check permissions.');
+    }
+  };
+
+  // Function to stop recording
+  const stopRecording = () => {
+    if (mediaRecorderRef.current) {
       mediaRecorderRef.current.stop();
       setIsRecording(false);
     }
   };
 
-  const handleReset = () => {
-    if (audioUrl) URL.revokeObjectURL(audioUrl);
-    setAudioUrl(null);
-    setIsRecording(false);
-    if (wavesurferRef.current) wavesurferRef.current.destroy();
+  // Function to toggle playback
+  const togglePlayback = () => {
+    if (!wavesurferRef.current) return;
+    if (wavesurferRef.current.isPlaying()) {
+      wavesurferRef.current.pause();
+    } else {
+      wavesurferRef.current.play();
+    }
+    // isPlaying state will also be updated by WaveSurfer's events
   };
 
   return (
-    <div style={{
-      minHeight: "100vh",
-      background: "linear-gradient(135deg, #e0eafc 0%, #cfdef3 100%)",
-      display: "flex",
-      flexDirection: "column",
-      alignItems: "center",
-      justifyContent: "center",
-      fontFamily: "Segoe UI, sans-serif",
-      padding: 16,
-    }}>
-      <h1 style={{
-        fontSize: 36,
-        fontWeight: 700,
-        color: "#2d3a4b",
-        marginBottom: 32,
-        textAlign: "center",
-        lineHeight: 1.1,
-      }}>
-        Barebaros lyd
-      </h1>
+    <div style={{ maxWidth: '600px', margin: '0 auto' }}>
+      {/* Waveform container */}
+      <div ref={waveformRef} id="waveform" />
 
-      {!audioUrl && (
-        <button
-          onClick={handleRecordToggle}
-          style={{
-            background: isRecording
-              ? "linear-gradient(90deg, #ff5858 0%, #f09819 100%)"
-              : "linear-gradient(90deg, #667eea 0%, #764ba2 100%)",
-            color: "#fff",
-            border: "none",
-            borderRadius: 50,
-            padding: "20px 40px",
-            fontSize: 22,
-            fontWeight: 600,
-            boxShadow: isRecording
-              ? "0 8px 32px rgba(255,88,88,0.11)"
-              : "0 8px 32px rgba(102,126,234,0.2)",
-            cursor: "pointer",
-            transition: "background 0.2s",
-            marginBottom: 24,
-            minWidth: 240,
-          }}
-        >
-          {isRecording ? "Stopp opptak" : "Start opptak"}
+      {/* Controls */}
+      <div style={{ marginTop: '10px', textAlign: 'center' }}>
+        {/* Record/Stop button */}
+        <button onClick={isRecording ? stopRecording : startRecording}>
+          {isRecording ? 'Stop Recording' : 'Record'}
         </button>
-      )}
-
-      <div style={{
-        margin: "32px auto 0",
-        maxWidth: 700,
-        width: "95%",
-        minHeight: 180,
-        display: audioUrl ? "block" : "none",
-      }}>
-        {/* ← note the id here */}
-        <div id="waveform" ref={waveformRef} style={{ width: "100%" }} />
-        <div style={{ textAlign: "center", color: "#888", marginTop: 8 }}>
-          Dra/endre det grønne området, <b>trykk på det for å spille av</b>
-        </div>
-        <div style={{
-          display: "flex",
-          justifyContent: "center",
-          margin: "28px 0 0",
-        }}>
-          <button
-            onClick={handleReset}
-            style={{
-              background: "linear-gradient(90deg, #ff5858 0%, #f09819 100%)",
-              color: "#fff",
-              border: "none",
-              borderRadius: 40,
-              padding: "16px 38px",
-              fontSize: 20,
-              fontWeight: 600,
-              boxShadow: "0 4px 16px rgba(255,88,88,0.11)",
-              cursor: "pointer",
-              minWidth: 180,
-            }}
-          >
-            Ta opp nytt
-          </button>
-        </div>
-        <div style={{
-          fontSize: 13,
-          color: "#999",
-          marginTop: 14,
-          textAlign: "center",
-        }}>
-          Tips: Trykk på det grønne feltet for å spille valgt område
-        </div>
+        {/* Play/Pause button (disabled during recording or if no audio loaded) */}
+        <button onClick={togglePlayback} disabled={isRecording || !wavesurferRef.current || !wavesurferRef.current.getDuration()}>
+          {isPlaying ? 'Pause' : 'Play'}
+        </button>
       </div>
+
+      {/* Inject CSS for region handle styling */}
+      <style>{`
+        /* Enlarge region handles for easier mobile interaction */
+        .wavesurfer-region .wavesurfer-handle {
+          width: 20px !important;
+          max-width: 20px !important;
+          margin-left: -10px !important;
+          background: rgba(0, 123, 255, 0.3) !important;
+          cursor: col-resize;
+        }
+      `}</style>
     </div>
   );
-}
+};
+
+export default WaveformRecorder;
