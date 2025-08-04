@@ -11,7 +11,7 @@ export default function App() {
   const mediaRecorderRef = useRef(null);
   const audioChunksRef = useRef([]);
 
-  // inject all of our custom CSS (region content + handles)
+  // inject all our custom CSS
   useEffect(() => {
     const style = document.createElement("style");
     style.innerHTML = `
@@ -34,14 +34,12 @@ export default function App() {
         white-space: nowrap;
       }
 
-      /* enlarge & style the right drag handle */
-      #waveform ::part(region-handle-right) {
+      /* ===== enlarge & color the region handles ===== */
+      #waveform .wavesurfer-region-handle-right {
         border-right-width: 20px !important;
         border-right-color: #fff000 !important;
       }
-
-      /* enlarge & style the left drag handle */
-      #waveform ::part(region-handle-left) {
+      #waveform .wavesurfer-region-handle-left {
         border-left-width: 20px !important;
         border-left-color: #4aef95 !important;
       }
@@ -53,19 +51,18 @@ export default function App() {
   useEffect(() => {
     if (!audioUrl || !waveformRef.current) return;
 
-    // clean up any previous instance
+    // destroy old instance
     if (wavesurferRef.current) {
       wavesurferRef.current.destroy();
-      console.log("WaveSurfer: Previous instance destroyed");
     }
 
-    // Create regions plugin instance
+    // set up Regions plugin
     const regions = RegionsPlugin.create({
       dragSelection: { color: "rgba(46,204,113,0.12)" },
     });
     regionsRef.current = regions;
 
-    // init WaveSurfer
+    // create WaveSurfer
     const ws = WaveSurfer.create({
       container: waveformRef.current,
       waveColor: "#43cea2",
@@ -79,7 +76,6 @@ export default function App() {
 
     ws.on("ready", () => {
       const dur = ws.getDuration();
-      console.log("WaveSurfer: Ready, duration:", dur);
       regions.addRegion({
         start: 0,
         end: Math.max(2, dur),
@@ -88,25 +84,21 @@ export default function App() {
         resize: true,
         content: "RESIZE ME!",
       });
-      console.log("WaveSurfer: Region added");
     });
 
-    // play on region click
     regions.on("region-clicked", (region, e) => {
       e.stopPropagation();
       region.play(true);
     });
 
-    // only one region at a time
     regions.on("region-created", (region) => {
+      // only one at a time
       Object.values(regions.list).forEach((r) => {
         if (r.id !== region.id) regions.removeRegion(r.id);
       });
     });
 
-    ws.on("error", (msg) => {
-      console.error("WaveSurfer error:", msg);
-    });
+    ws.on("error", console.error);
 
     return () => ws.destroy();
   }, [audioUrl]);
@@ -125,14 +117,11 @@ export default function App() {
         const url = URL.createObjectURL(blob);
         setAudioUrl(url);
         setIsRecording(false);
-        console.log("Recording stopped, blob created:", url);
       };
       mediaRecorderRef.current.start();
-      console.log("Recording started");
     } else {
       mediaRecorderRef.current.stop();
       setIsRecording(false);
-      console.log("Recording stopped (manual)");
     }
   };
 
@@ -141,7 +130,6 @@ export default function App() {
     setAudioUrl(null);
     setIsRecording(false);
     if (wavesurferRef.current) wavesurferRef.current.destroy();
-    console.log("Reset all");
   };
 
   return (
@@ -193,13 +181,14 @@ export default function App() {
       )}
 
       <div style={{
-        margin: "32px auto 0 auto",
+        margin: "32px auto 0",
         maxWidth: 700,
         width: "95%",
         minHeight: 180,
         display: audioUrl ? "block" : "none",
       }}>
-        <div ref={waveformRef} style={{ width: "100%" }} />
+        {/* ← note the id here */}
+        <div id="waveform" ref={waveformRef} style={{ width: "100%" }} />
         <div style={{ textAlign: "center", color: "#888", marginTop: 8 }}>
           Dra/endre det grønne området, <b>trykk på det for å spille av</b>
         </div>
