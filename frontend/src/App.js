@@ -72,32 +72,34 @@ export default function App() {
       });
     });
 
-    // === Widen handles (MutationObserver, safe for plugin & version changes) ===
+    // === Widen handles and make them visibly thick & colored ===
     regions.on("region-created", (region) => {
-      // Wait for handles to appear in the DOM (plugin sometimes renders them async)
       const observer = new MutationObserver(() => {
-        // Try both possible handle selectors for best compatibility
         const left = region.element.querySelector('[part="region-handle-left"]') || region.element.children[0];
         const right = region.element.querySelector('[part="region-handle-right"]') || region.element.children[1];
         if (left && right) {
+          // Left handle: wide, visible, blue thick bar
           left.style.width = "36px";
           left.style.marginLeft = "-18px";
           left.style.zIndex = "10";
           left.style.cursor = "ew-resize";
-          left.style.background = "rgba(0,0,0,0.01)";
+          left.style.background = "rgba(120,120,120,0.25)"; // visible area
+          left.style.borderRight = "5px solid #185a9d"; // blue, thick
           left.style.touchAction = "none";
+          // Right handle: wide, visible, blue thick bar
           right.style.width = "36px";
           right.style.marginRight = "-18px";
           right.style.zIndex = "10";
           right.style.cursor = "ew-resize";
-          right.style.background = "rgba(0,0,0,0.01)";
+          right.style.background = "rgba(120,120,120,0.25)";
+          right.style.borderLeft = "5px solid #185a9d";
           right.style.touchAction = "none";
-          observer.disconnect(); // Stop observing once handled
+          observer.disconnect();
         }
       });
       observer.observe(region.element, { childList: true, subtree: true });
 
-      // === Only keep one region at a time (no crash if undefined/null) ===
+      // Only keep one region at a time, safely:
       const regionList = regions.list || regions.regions || {};
       Object.values(regionList).forEach((r) => {
         if (r.id !== region.id) regions.removeRegion(r.id);
