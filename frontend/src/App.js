@@ -69,37 +69,27 @@ export default function App() {
         drag: true,
         resize: true,
         content: "RESIZE ME!",
+        handleStyle: {
+          left:  {
+            width: "28px",
+            background: "#185a9d",
+            borderRight: "4px solid #222",
+            borderRadius: "5px",
+            touchAction: "none"
+          },
+          right: {
+            width: "28px",
+            background: "#185a9d",
+            borderLeft: "4px solid #222",
+            borderRadius: "5px",
+            touchAction: "none"
+          }
+        }
       });
     });
 
-    // === Widen handles and make them visibly thick & colored ===
+    // Only keep one region at a time, safely:
     regions.on("region-created", (region) => {
-      const observer = new MutationObserver(() => {
-        const left = region.element.querySelector('[part="region-handle-left"]') || region.element.children[0];
-        const right = region.element.querySelector('[part="region-handle-right"]') || region.element.children[1];
-        if (left && right) {
-          // Left handle: wide, visible, blue thick bar
-          left.style.width = "36px";
-          left.style.marginLeft = "-18px";
-          left.style.zIndex = "10";
-          left.style.cursor = "ew-resize";
-          left.style.background = "rgba(120,120,120,0.25)"; // visible area
-          left.style.borderRight = "5px solid #185a9d"; // blue, thick
-          left.style.touchAction = "none";
-          // Right handle: wide, visible, blue thick bar
-          right.style.width = "36px";
-          right.style.marginRight = "-18px";
-          right.style.zIndex = "10";
-          right.style.cursor = "ew-resize";
-          right.style.background = "rgba(120,120,120,0.25)";
-          right.style.borderLeft = "5px solid #185a9d";
-          right.style.touchAction = "none";
-          observer.disconnect();
-        }
-      });
-      observer.observe(region.element, { childList: true, subtree: true });
-
-      // Only keep one region at a time, safely:
       const regionList = regions.list || regions.regions || {};
       Object.values(regionList).forEach((r) => {
         if (r.id !== region.id) regions.removeRegion(r.id);
@@ -202,7 +192,14 @@ export default function App() {
         minHeight: 180,
         display: audioUrl ? "block" : "none",
       }}>
-        <div id="waveform" ref={waveformRef} style={{ width: "100%" }} />
+        <div
+          id="waveform"
+          ref={waveformRef}
+          style={{
+            width: "100%",
+            touchAction: "none", // ensures finger drag works on mobile
+          }}
+        />
 
         <div style={{ textAlign: "center", color: "#888", marginTop: 8 }}>
           Dra/endre det grønne området, <b>trykk på det for å spille av</b>
