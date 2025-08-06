@@ -11,7 +11,7 @@ export default function App() {
   const mediaRecorderRef = useRef(null);
   const audioChunksRef = useRef([]);
 
-  // Optional: Style for region content, etc
+  // Optional: Style for region content
   useEffect(() => {
     const style = document.createElement("style");
     style.innerHTML = `
@@ -72,17 +72,22 @@ export default function App() {
       });
     });
 
-    // ---- Key fix for mobile: make the real handles much bigger
+    // === Make handles bigger for mobile/fat finger ===
     regions.on("region-created", (region) => {
-      // Make handles wider for touch
+      // Approach 1: classic children (older wavesurfer versions)
+      if (region.element && region.element.children.length >= 2) {
+        region.element.children[0].style.width = "36px";
+        region.element.children[1].style.width = "36px";
+      }
+      // Approach 2: modern (part attribute, v6/v7+)
       const left = region.element.querySelector('[part="region-handle-left"]');
       const right = region.element.querySelector('[part="region-handle-right"]');
       if (left) {
-        left.style.width = "36px";         // Much wider for finger
-        left.style.marginLeft = "-18px";   // Center the grab area on the edge
+        left.style.width = "36px";
+        left.style.marginLeft = "-18px";
         left.style.zIndex = "10";
         left.style.cursor = "ew-resize";
-        left.style.background = "rgba(0,0,0,0.01)"; // almost invisible
+        left.style.background = "rgba(0,0,0,0.01)";
         left.style.touchAction = "none";
       }
       if (right) {
@@ -93,11 +98,12 @@ export default function App() {
         right.style.background = "rgba(0,0,0,0.01)";
         right.style.touchAction = "none";
       }
+    });
 
-      // Only keep one region at a time (if you want)
-      Object.values(regions.list).forEach((r) => {
-        if (r.id !== region.id) regions.removeRegion(r.id);
-      });
+    // === Click to play region ===
+    regions.on("region-clicked", (region, e) => {
+      e.stopPropagation();
+      region.play();
     });
 
     ws.on("error", console.error);
