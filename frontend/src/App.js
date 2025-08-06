@@ -11,7 +11,7 @@ export default function App() {
   const mediaRecorderRef = useRef(null);
   const audioChunksRef = useRef([]);
 
-  // Optional: Style for region content
+  // Optional: Add custom styles for your label/region content
   useEffect(() => {
     const style = document.createElement("style");
     style.innerHTML = `
@@ -72,35 +72,38 @@ export default function App() {
       });
     });
 
-    // === Make handles bigger for mobile/fat finger ===
+    // === MutationObserver-based handle resizing for mobile usability ===
     regions.on("region-created", (region) => {
-      // Approach 1: classic children (older wavesurfer versions)
-      if (region.element && region.element.children.length >= 2) {
-        region.element.children[0].style.width = "36px";
-        region.element.children[1].style.width = "36px";
-      }
-      // Approach 2: modern (part attribute, v6/v7+)
-      const left = region.element.querySelector('[part="region-handle-left"]');
-      const right = region.element.querySelector('[part="region-handle-right"]');
-      if (left) {
-        left.style.width = "36px";
-        left.style.marginLeft = "-18px";
-        left.style.zIndex = "10";
-        left.style.cursor = "ew-resize";
-        left.style.background = "rgba(0,0,0,0.01)";
-        left.style.touchAction = "none";
-      }
-      if (right) {
-        right.style.width = "36px";
-        right.style.marginRight = "-18px";
-        right.style.zIndex = "10";
-        right.style.cursor = "ew-resize";
-        right.style.background = "rgba(0,0,0,0.01)";
-        right.style.touchAction = "none";
-      }
+      // Use MutationObserver in case handles are created async
+      const observer = new MutationObserver(() => {
+        // Try both modern and classic ways for maximum compatibility
+        const left = region.element.querySelector('[part="region-handle-left"]') || region.element.children[0];
+        const right = region.element.querySelector('[part="region-handle-right"]') || region.element.children[1];
+        if (left && right) {
+          left.style.width = "36px";
+          left.style.marginLeft = "-18px";
+          left.style.zIndex = "10";
+          left.style.cursor = "ew-resize";
+          left.style.background = "rgba(0,0,0,0.01)"; // mostly invisible, but you can tweak
+          left.style.touchAction = "none";
+          right.style.width = "36px";
+          right.style.marginRight = "-18px";
+          right.style.zIndex = "10";
+          right.style.cursor = "ew-resize";
+          right.style.background = "rgba(0,0,0,0.01)";
+          right.style.touchAction = "none";
+          observer.disconnect(); // Stop observing once applied!
+        }
+      });
+      observer.observe(region.element, { childList: true, subtree: true });
+
+      // If you only want one region at a time, keep this block:
+      Object.values(regions.list).forEach((r) => {
+        if (r.id !== region.id) regions.removeRegion(r.id);
+      });
     });
 
-    // === Click to play region ===
+    // === Click region to play ===
     regions.on("region-clicked", (region, e) => {
       e.stopPropagation();
       region.play();
