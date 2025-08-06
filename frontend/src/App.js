@@ -11,7 +11,7 @@ export default function App() {
   const mediaRecorderRef = useRef(null);
   const audioChunksRef = useRef([]);
 
-  // Inject style for visible handles (optional, mostly for desktop/mouse users)
+  // Optional: Style for region content, etc
   useEffect(() => {
     const style = document.createElement("style");
     style.innerHTML = `
@@ -32,10 +32,6 @@ export default function App() {
         box-shadow: 0 2px 16px #b8f2e6a8;
         white-space: nowrap;
       }
-      /* Optionally widen handles for visible feedback on desktop */
-      #waveform ::part(region-handle) {
-        width: 16px !important;
-      }
     `;
     document.head.appendChild(style);
     return () => document.head.removeChild(style);
@@ -48,7 +44,6 @@ export default function App() {
       wavesurferRef.current.destroy();
     }
 
-    // Setup Regions plugin
     const regions = RegionsPlugin.create({
       dragSelection: { color: "rgba(46,204,113,0.12)" },
     });
@@ -65,7 +60,6 @@ export default function App() {
     });
     wavesurferRef.current = ws;
 
-    // Add a region when ready
     ws.on("ready", () => {
       const dur = ws.getDuration();
       regions.addRegion({
@@ -78,49 +72,29 @@ export default function App() {
       });
     });
 
-    // Add mobile-friendly touch overlays to region
-    const addTouchHandles = region => {
-      // Clean up old overlays if re-adding
-      Array.from(region.element.querySelectorAll(".region-touch-overlay")).forEach(el => el.remove());
-
-      ['start', 'end'].forEach(side => {
-        const overlay = document.createElement('div');
-        overlay.className = "region-touch-overlay";
-        Object.assign(overlay.style, {
-          position: "absolute",
-          top: "0",
-          width: "40px", // Wide enough for thumbs!
-          height: "100%",
-          [side === 'start' ? 'left' : 'right']: "-20px", // Centered on edge
-          zIndex: "20",
-          background: "transparent",
-          touchAction: "none",
-          // For debug: background: "rgba(255,0,0,0.2)",
-        });
-        overlay.addEventListener("pointerdown", evt => {
-          evt.stopPropagation();
-          // Forward the event to the Wavesurfer handle inside shadow DOM
-          const handlePart = region.element.shadowRoot
-            ? region.element.shadowRoot.querySelector(`[part="region-handle-${side}"]`)
-            : region.element.querySelector(`[part="region-handle-${side}"]`);
-          if (handlePart) {
-            // Emulate pointer event on the actual handle for true mobile resize
-            const event = new PointerEvent("pointerdown", evt);
-            handlePart.dispatchEvent(event);
-          }
-        });
-        region.element.appendChild(overlay);
-      });
-    };
-
-    // Add overlays to every new region
-    regions.on("region-created", addTouchHandles);
-
-    // Also add overlays to existing regions (e.g. after undo/redo)
-    Object.values(regions.list || {}).forEach(addTouchHandles);
-
-    // Only allow one region at a time
+    // ---- Key fix for mobile: make the real handles much bigger
     regions.on("region-created", (region) => {
+      // Make handles wider for touch
+      const left = region.element.querySelector('[part="region-handle-left"]');
+      const right = region.element.querySelector('[part="region-handle-right"]');
+      if (left) {
+        left.style.width = "36px";         // Much wider for finger
+        left.style.marginLeft = "-18px";   // Center the grab area on the edge
+        left.style.zIndex = "10";
+        left.style.cursor = "ew-resize";
+        left.style.background = "rgba(0,0,0,0.01)"; // almost invisible
+        left.style.touchAction = "none";
+      }
+      if (right) {
+        right.style.width = "36px";
+        right.style.marginRight = "-18px";
+        right.style.zIndex = "10";
+        right.style.cursor = "ew-resize";
+        right.style.background = "rgba(0,0,0,0.01)";
+        right.style.touchAction = "none";
+      }
+
+      // Only keep one region at a time (if you want)
       Object.values(regions.list).forEach((r) => {
         if (r.id !== region.id) regions.removeRegion(r.id);
       });
@@ -131,7 +105,7 @@ export default function App() {
     return () => ws.destroy();
   }, [audioUrl]);
 
-  // Recording logic unchanged
+  // Recording logic
   const handleRecordToggle = async () => {
     if (!isRecording) {
       setIsRecording(true);
@@ -216,7 +190,6 @@ export default function App() {
         minHeight: 180,
         display: audioUrl ? "block" : "none",
       }}>
-        {/* The container needs id for selector */}
         <div id="waveform" ref={waveformRef} style={{ width: "100%" }} />
 
         <div style={{ textAlign: "center", color: "#888", marginTop: 8 }}>
