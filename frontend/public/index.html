@@ -1,124 +1,167 @@
-import WaveSurfer from "https://unpkg.com/wavesurfer.js@7/dist/wavesurfer.esm.js";
-import RegionsPlugin from "https://unpkg.com/wavesurfer.js@7/dist/plugins/regions.esm.js";
-
-const recordBtn = document.getElementById('record');
-const resetBtn = document.getElementById('reset');
-const waveform = document.getElementById('waveform');
-const hint = document.querySelector('.hint');
-const tips = document.querySelector('.tips');
-let ws, regions, mediaRecorder, audioUrl = null, isRecording = false, chunks = [];
-
-function styleHandles(region) {
-  setTimeout(() => {
-    // Left
-    const left = region.element.children[0];
-    if (left) {
-      left.style.position = "absolute";
-      left.style.zIndex = "2";
-      left.style.width = "6px";
-      left.style.height = "100%";
-      left.style.top = "0px";
-      left.style.left = "0px";
-      left.style.cursor = "ew-resize";
-      left.style.borderLeft = "50px solid rgba(0, 105, 255, 0.15)";
-      left.style.borderRadius = "2px 0 0 2px";
-      left.style.background = "transparent";
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Barebaros lyd</title>
+  <script type="module" src="https://unpkg.com/wavesurfer.js@7/dist/wavesurfer.esm.js"></script>
+  <script type="module" src="https://unpkg.com/wavesurfer.js@7/dist/plugins/regions.esm.js"></script>
+  <style>
+    body {
+      min-height: 100vh;
+      background: linear-gradient(135deg, #e0eafc 0%, #cfdef3 100%);
+      font-family: 'Segoe UI', sans-serif;
+      display: flex; flex-direction: column; align-items: center; justify-content: center;
     }
-    // Right
-    const right = region.element.children[1];
-    if (right) {
-      right.style.position = "absolute";
-      right.style.zIndex = "2";
-      right.style.width = "6px";
-      right.style.height = "100%";
-      right.style.top = "0px";
-      right.style.right = "0px";
-      right.style.cursor = "ew-resize";
-      right.style.borderRight = "50px solid rgba(0, 105, 255, 0.15)";
-      right.style.borderRadius = "0 2px 2px 0";
-      right.style.background = "transparent";
+    h1 { font-size: 36px; font-weight: 700; color: #2d3a4b; margin-bottom: 32px; }
+    .record-btn, .reset-btn {
+      background: linear-gradient(90deg, #ff5858 0%, #f09819 100%);
+      color: #fff; border: none; border-radius: 40px; padding: 20px 40px;
+      font-size: 22px; font-weight: 600; box-shadow: 0 8px 32px rgba(255,88,88,0.11);
+      cursor: pointer; min-width: 240px; margin-bottom: 24px; transition: background 0.2s;
     }
-  }, 0);
-}
+    .reset-btn { min-width: 180px; padding: 16px 38px; margin-top: 28px; }
+    .hint, .tips { color: #888; text-align: center; }
+    .tips { font-size: 13px; color: #999; margin-top: 14px; }
+    .waveform-wrapper {
+      max-width: 700px; width: 95%; min-height: 180px; margin: 32px auto 0; position: relative;
+    }
+  </style>
+</head>
+<body>
+  <h1>Barebaros lyd</h1>
+  <button class="record-btn" id="record">Start opptak</button>
+  <div class="waveform-wrapper">
+    <div id="waveform"></div>
+    <div class="hint" style="display:none;">Dra/endre det grønne området, <b>trykk på det for å spille av</b></div>
+    <button class="reset-btn" id="reset" style="display:none;">Ta opp nytt</button>
+    <div class="tips" style="display:none;">Tips: Trykk på det grønne feltet for å spille valgt område</div>
+  </div>
+  <script type="module">
+    import WaveSurfer from "https://unpkg.com/wavesurfer.js@7/dist/wavesurfer.esm.js";
+    import RegionsPlugin from "https://unpkg.com/wavesurfer.js@7/dist/plugins/regions.esm.js";
 
-function setupWaveSurfer(blobUrl) {
-  if (ws) ws.destroy();
-  regions = RegionsPlugin.create();
-  ws = WaveSurfer.create({
-    container: waveform,
-    waveColor: "#43cea2",
-    progressColor: "#185a9d",
-    height: 160,
-    url: blobUrl,
-    plugins: [regions],
-    responsive: true,
-  });
-  ws.on('ready', () => {
-    const dur = ws.getDuration();
-    const region = regions.addRegion({
-      start: 0,
-      end: Math.max(2, dur),
-      color: "rgba(63,23,39,0.35)",
-      drag: true,
-      resize: true,
-      content: "RESIZE ME!"
-    });
-    styleHandles(region);
-  });
+    const recordBtn = document.getElementById('record');
+    const resetBtn = document.getElementById('reset');
+    const waveform = document.getElementById('waveform');
+    const hint = document.querySelector('.hint');
+    const tips = document.querySelector('.tips');
+    let ws, regions, mediaRecorder, audioUrl = null, isRecording = false, chunks = [];
 
-  // Play region and stop at end, no matter what
-  regions.on("region-clicked", (region, e) => {
-    e.stopPropagation();
-    ws.play(region.start);
+    function styleHandles(region) {
+      setTimeout(() => {
+        // Left
+        const left = region.element.children[0];
+        if (left) {
+          left.style.position = "absolute";
+          left.style.zIndex = "2";
+          left.style.width = "6px";
+          left.style.height = "100%";
+          left.style.top = "0px";
+          left.style.left = "0px";
+          left.style.cursor = "ew-resize";
+          left.style.borderLeft = "50px solid rgba(0, 105, 255, 0.15)";
+          left.style.borderRadius = "2px 0 0 2px";
+          left.style.background = "transparent";
+        }
+        // Right
+        const right = region.element.children[1];
+        if (right) {
+          right.style.position = "absolute";
+          right.style.zIndex = "2";
+          right.style.width = "6px";
+          right.style.height = "100%";
+          right.style.top = "0px";
+          right.style.right = "0px";
+          right.style.cursor = "ew-resize";
+          right.style.borderRight = "50px solid rgba(0, 105, 255, 0.15)";
+          right.style.borderRadius = "0 2px 2px 0";
+          right.style.background = "transparent";
+        }
+      }, 0);
+    }
 
-    // Remove old listener
-    ws.un("timeupdate");
+    function setupWaveSurfer(blobUrl) {
+      if (ws) ws.destroy();
+      regions = RegionsPlugin.create();
+      ws = WaveSurfer.create({
+        container: waveform,
+        waveColor: "#43cea2",
+        progressColor: "#185a9d",
+        height: 160,
+        url: blobUrl,
+        plugins: [regions],
+        responsive: true,
+      });
+      ws.on('ready', () => {
+        const dur = ws.getDuration();
+        const region = regions.addRegion({
+          start: 0,
+          end: Math.max(2, dur),
+          color: "rgba(63,23,39,0.35)",
+          drag: true,
+          resize: true,
+          content: "RESIZE ME!"
+        });
+        styleHandles(region);
+      });
 
-    ws.on("timeupdate", () => {
-      if (ws.getCurrentTime() >= region.end) {
-        ws.pause();
-        ws.seekTo(region.end / ws.getDuration());
+      // Play region and stop at end, no matter what
+      regions.on("region-clicked", (region, e) => {
+        e.stopPropagation();
+        ws.play(region.start);
+
+        // Remove old listener
         ws.un("timeupdate");
+
+        ws.on("timeupdate", () => {
+          if (ws.getCurrentTime() >= region.end) {
+            ws.pause();
+            ws.seekTo(region.end / ws.getDuration());
+            ws.un("timeupdate");
+          }
+        });
+      });
+
+      regions.on("region-created", (region) => {
+        styleHandles(region);
+      });
+    }
+
+    recordBtn.onclick = async () => {
+      if (!isRecording) {
+        recordBtn.textContent = "Stopp opptak";
+        isRecording = true;
+        const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+        mediaRecorder = new window.MediaRecorder(stream);
+        chunks = [];
+        mediaRecorder.ondataavailable = (e) => chunks.push(e.data);
+        mediaRecorder.onstop = () => {
+          const blob = new Blob(chunks, { type: "audio/webm" });
+          if (audioUrl) URL.revokeObjectURL(audioUrl);
+          audioUrl = URL.createObjectURL(blob);
+          setupWaveSurfer(audioUrl);
+          hint.style.display = "block";
+          resetBtn.style.display = "inline-block";
+          tips.style.display = "block";
+          recordBtn.style.display = "none";
+        };
+        mediaRecorder.start();
+      } else {
+        recordBtn.textContent = "Start opptak";
+        isRecording = false;
+        mediaRecorder.stop();
       }
-    });
-  });
-
-  regions.on("region-created", (region) => {
-    styleHandles(region);
-  });
-}
-
-recordBtn.onclick = async () => {
-  if (!isRecording) {
-    recordBtn.textContent = "Stopp opptak";
-    isRecording = true;
-    const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-    mediaRecorder = new window.MediaRecorder(stream);
-    chunks = [];
-    mediaRecorder.ondataavailable = (e) => chunks.push(e.data);
-    mediaRecorder.onstop = () => {
-      const blob = new Blob(chunks, { type: "audio/webm" });
-      if (audioUrl) URL.revokeObjectURL(audioUrl);
-      audioUrl = URL.createObjectURL(blob);
-      setupWaveSurfer(audioUrl);
-      hint.style.display = "block";
-      resetBtn.style.display = "inline-block";
-      tips.style.display = "block";
-      recordBtn.style.display = "none";
     };
-    mediaRecorder.start();
-  } else {
-    recordBtn.textContent = "Start opptak";
-    isRecording = false;
-    mediaRecorder.stop();
-  }
-};
 
-resetBtn.onclick = () => {
-  if (audioUrl) URL.revokeObjectURL(audioUrl);
-  if (ws) ws.destroy();
-  hint.style.display = tips.style.display = "none";
-  resetBtn.style.display = "none";
-  recordBtn.style.display = "inline-block";
-  waveform.innerHTML = "";
-};
+    resetBtn.onclick = () => {
+      if (audioUrl) URL.revokeObjectURL(audioUrl);
+      if (ws) ws.destroy();
+      hint.style.display = tips.style.display = "none";
+      resetBtn.style.display = "none";
+      recordBtn.style.display = "inline-block";
+      waveform.innerHTML = "";
+    };
+  </script>
+</body>
+</html>
