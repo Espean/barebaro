@@ -4,7 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Barebaros lyd</title>
-  <!-- Wavesurfer & Regions via CDN -->
+  <!-- Wavesurfer & Regions plugin from CDN (v7.x, ES module) -->
   <script type="module" src="https://unpkg.com/wavesurfer.js@7/dist/wavesurfer.esm.js"></script>
   <script type="module" src="https://unpkg.com/wavesurfer.js@7/dist/plugins/regions.esm.js"></script>
   <style>
@@ -27,65 +27,48 @@
     .waveform-wrapper {
       max-width: 700px; width: 95%; min-height: 180px; margin: 32px auto 0; position: relative;
     }
-    /* ----- BEAUTIFUL, BIG, SOFT HANDLES ----- */
+    /* --- Custom beautiful region handles --- */
     .ws-region-handle {
-      width: 56px !important;
-      min-width: 56px !important;
+      width: 48px !important;
+      min-width: 48px !important;
       height: 80px !important;
-      min-height: 80px !important;
-      margin: 0 -28px;
-      background: transparent !important;
-      border: none !important;
-      cursor: ew-resize !important;
-      z-index: 10;
-      pointer-events: auto !important;
-      position: relative;
-      display: flex !important;
-      align-items: center;
-      justify-content: center;
-    }
-    .ws-region-handle[data-resize="start"] {
-      border-left: 5px solid #4bb7ec !important;
-      border-radius: 18px 0 0 18px !important;
-    }
-    .ws-region-handle[data-resize="end"] {
-      border-right: 5px solid #4bb7ec !important;
-      border-radius: 0 18px 18px 0 !important;
-    }
-    .ws-region-handle .grabber-bg {
-      background: linear-gradient(135deg, #b7e2fc 0%, #a3cdfc 100%);
-      border-radius: 16px;
-      width: 40px;
-      height: 60px;
-      box-shadow: 0 2px 8px 0 #2d3a4b15;
+      margin: 0 -24px;
       display: flex;
       align-items: center;
       justify-content: center;
+      background: transparent !important;
+      cursor: ew-resize;
+      z-index: 15;
     }
-    .ws-region-handle .grabber {
-      font-size: 36px;
-      color: #3498db;
+    .grabber-bg {
+      width: 38px;
+      height: 56px;
+      border-radius: 18px;
+      background: linear-gradient(135deg,#41d2ff 0%,#8be3fd 90%);
+      box-shadow: 0 2px 8px #8be3fd70;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border: 2.5px solid #185a9d;
+    }
+    .grabber {
+      font-size: 2.1em;
+      color: #185a9d;
+      letter-spacing: -2px;
       user-select: none;
-      pointer-events: none;
-      letter-spacing: -0.25em;
-      opacity: 0.85;
-      font-family: 'Segoe UI', Arial, sans-serif;
-      text-shadow: 0 2px 8px #fff8;
+      font-family: monospace;
+      font-weight: 700;
+      line-height: 1;
+      text-shadow: 0 1px 3px #fff9, 0 0px 2px #41d2ff90;
     }
-    @media (max-width: 600px) {
-      .ws-region-handle {
-        width: 72px !important;
-        min-width: 72px !important;
-        height: 96px !important;
-        min-height: 96px !important;
-      }
-      .ws-region-handle .grabber-bg {
-        width: 54px;
-        height: 80px;
-      }
-      .ws-region-handle .grabber {
-        font-size: 52px !important;
-      }
+    /* Optional: Animate handle on hover/touch */
+    .ws-region-handle:hover .grabber-bg,
+    .ws-region-handle:active .grabber-bg {
+      background: linear-gradient(135deg, #19a6ed 0%, #b8f2e6 100%);
+      border-color: #2d3a4b;
+      box-shadow: 0 2px 20px #41d2ff70;
+      transform: scale(1.06);
+      transition: all .1s;
     }
   </style>
 </head>
@@ -109,6 +92,26 @@
     const tips = document.querySelector('.tips');
     let ws, regions, mediaRecorder, audioUrl = null, isRecording = false, chunks = [];
 
+    function styleHandles(region) {
+      // Wait for DOM handles
+      setTimeout(() => {
+        Array.from(region.element.children).forEach((handle, i) => {
+          if (handle && (i === 0 || i === 1)) {
+            handle.classList.add("ws-region-handle");
+            handle.innerHTML = "";
+            // Add blue pill + ⠿ icon
+            const bg = document.createElement('div');
+            bg.className = "grabber-bg";
+            const grabber = document.createElement('div');
+            grabber.className = "grabber";
+            grabber.textContent = '⠿';
+            bg.appendChild(grabber);
+            handle.appendChild(bg);
+          }
+        });
+      }, 0);
+    }
+
     function setupWaveSurfer(blobUrl) {
       if (ws) ws.destroy();
       regions = RegionsPlugin.create();
@@ -123,7 +126,7 @@
       });
       ws.on('ready', () => {
         const dur = ws.getDuration();
-        regions.addRegion({
+        const region = regions.addRegion({
           start: 0,
           end: Math.max(2, dur),
           color: "rgba(63,23,39,0.35)",
@@ -131,34 +134,15 @@
           resize: true,
           content: "RESIZE ME!"
         });
+        styleHandles(region);
       });
       regions.on("region-clicked", (region, e) => {
         e.stopPropagation();
         region.play();
       });
-      // Big beautiful region handles
-      regions.on("region-created", (region) => {
-        setTimeout(() => {
-          [region.element.children[0], region.element.children[1]].forEach(handle => {
-            if (handle) {
-              handle.classList.add("ws-region-handle");
-              // Remove previous content
-              handle.innerHTML = "";
-              // Add background + icon
-              const bg = document.createElement('div');
-              bg.className = "grabber-bg";
-              const grabber = document.createElement('div');
-              grabber.className = "grabber";
-              grabber.textContent = '⠿'; // Try '≡' or '⋮⋮' if you like
-              bg.appendChild(grabber);
-              handle.appendChild(bg);
-            }
-          });
-        }, 0);
-      });
+      regions.on("region-created", styleHandles);
     }
 
-    // Recording logic
     recordBtn.onclick = async () => {
       if (!isRecording) {
         recordBtn.textContent = "Stopp opptak";
