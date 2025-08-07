@@ -1,13 +1,6 @@
 import React, { useRef, useState, useEffect } from "react";
-import '@wavesurfer/web-component';
 
-// This component demonstrates how to use the Wavesurfer Web Component inside a
-// React application.  It records audio, loads the recorded blob into
-// <wave-surfer>, and exposes a single draggable region.  The region handles
-// are styled via the ::part selectors defined in the accompanying CSS file
-// (see waveSurfer.css).  Switching to the Web Component allows us to style
-// internal parts without resorting to complex JavaScript hacks or
-// MutationObservers.
+// DO NOT import '@wavesurfer/web-component';
 
 export default function App() {
   const waveRef = useRef(null);
@@ -16,17 +9,14 @@ export default function App() {
   const mediaRecorderRef = useRef(null);
   const audioChunksRef = useRef([]);
 
-  // When audioUrl changes, update the src attribute on the web component.
+  // Update the wave-surfer's src attribute when audioUrl changes
   useEffect(() => {
     if (audioUrl && waveRef.current) {
       waveRef.current.setAttribute('src', audioUrl);
     }
   }, [audioUrl]);
 
-  // Handle start/stop recording.  Uses the MediaRecorder API to capture
-  // microphone input and construct a Blob, then converts it to an object
-  // URL which <wave-surfer> can load.  Once recording stops, the region
-  // element is updated to cover the full duration of the recorded audio.
+  // Handle recording audio
   const handleRecordToggle = async () => {
     if (!isRecording) {
       setIsRecording(true);
@@ -49,33 +39,27 @@ export default function App() {
     }
   };
 
-  // Reset the recording and clear any existing region/audio
+  // Reset recording
   const handleReset = () => {
     if (audioUrl) URL.revokeObjectURL(audioUrl);
     setAudioUrl(null);
     setIsRecording(false);
   };
 
-  // After the web component has loaded the audio (fires when the waveform
-  // finishes decoding), set up a single region that spans the entire audio
-  // duration.  We listen for the custom event "decode" dispatched by the
-  // <wave-surfer> element.
+  // Add region after waveform decodes
   useEffect(() => {
     const waveEl = waveRef.current;
     if (!waveEl) return;
     const onDecode = () => {
-      // Remove any existing regions
       waveEl.regions?.clearRegions?.();
       const duration = waveEl.duration || 0;
-      // Add a region spanning the full duration.  The id attribute is used
-      // to reference the region later if needed.
       waveEl.addRegion({
         start: 0,
         end: Math.max(2, duration),
         color: 'rgba(63, 23, 39, 0.35)',
         drag: true,
         resize: true,
-        content: 'RESIZE ME!'
+        content: 'RESIZE ME!',
       });
     };
     waveEl.addEventListener('decode', onDecode);
@@ -91,10 +75,12 @@ export default function App() {
         </button>
       )}
       <div style={styles.waveformWrapper}>
-        {/* WaveSurfer Web Component.  The ref allows us to update its src and
-            register event listeners.  The responsive attribute ensures the
-            waveform resizes with the container. */}
-        <wave-surfer ref={waveRef} responsive style={{ display: audioUrl ? 'block' : 'none', width: '100%', height: '160px' }} />
+        {/* The WaveSurfer Web Component */}
+        <wave-surfer
+          ref={waveRef}
+          responsive
+          style={{ display: audioUrl ? 'block' : 'none', width: '100%', height: '160px' }}
+        />
         {audioUrl && (
           <>
             <div style={styles.hint}>Dra/endre det grønne området, <b>trykk på det for å spille av</b></div>
@@ -107,9 +93,6 @@ export default function App() {
   );
 }
 
-// Inline styles for the component.  Feel free to adjust colors and sizes
-// to match your overall design.  The buttons use gradient backgrounds and
-// shadows similar to the original design provided by the user.
 const styles = {
   container: {
     minHeight: '100vh',
