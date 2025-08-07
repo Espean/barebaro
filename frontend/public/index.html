@@ -28,9 +28,42 @@
       max-width: 700px; width: 95%; min-height: 180px; margin: 32px auto 0; position: relative;
     }
     /* Enlarge region handles for easier touch! */
-    .ws-region-handle { width: 36px !important; margin: 0 -18px; background: rgba(24,90,157,0.12); cursor: ew-resize; }
-    .ws-region-handle[data-resize="start"] { border-left: 5px solid #185a9d; border-radius: 6px 0 0 6px; }
-    .ws-region-handle[data-resize="end"]   { border-right: 5px solid #185a9d; border-radius: 0 6px 6px 0; }
+    .ws-region-handle {
+      width: 48px !important;
+      height: 60px !important;
+      margin: 0 -24px;
+      background: rgba(24,90,157,0.18);
+      cursor: ew-resize;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 5;
+      touch-action: none;
+    }
+    .ws-region-handle[data-resize="start"] {
+      border-left: 7px solid #185a9d;
+      border-radius: 12px 0 0 12px;
+    }
+    .ws-region-handle[data-resize="end"] {
+      border-right: 7px solid #185a9d;
+      border-radius: 0 12px 12px 0;
+    }
+    .grabber {
+      font-size: 36px;
+      color: #185a9d;
+      user-select: none;
+      pointer-events: none;
+      margin: 0 auto;
+    }
+    @media (max-width: 600px) {
+      .ws-region-handle {
+        width: 64px !important;
+        height: 80px !important;
+      }
+      .grabber {
+        font-size: 46px !important;
+      }
+    }
   </style>
 </head>
 <body>
@@ -81,13 +114,19 @@
         e.stopPropagation();
         region.play();
       });
-      // Enlarge the region handles for mobile friendliness
+      // Enlarge and add grabber icon to region handles
       regions.on("region-created", (region) => {
         setTimeout(() => {
-          // v7: region.element has the two handles as children[0] and children[1]
-          [region.element.children[0], region.element.children[1]].forEach(handle => {
+          [region.element.children[0], region.element.children[1]].forEach((handle, i) => {
             if (handle) {
               handle.classList.add("ws-region-handle");
+              // Add a visible grabber icon if not already present
+              if (!handle.querySelector('.grabber')) {
+                const grabber = document.createElement('div');
+                grabber.className = "grabber";
+                grabber.textContent = '⣿'; // Try '⠿' or '⋮' for different styles
+                handle.appendChild(grabber);
+              }
             }
           });
         }, 0);
