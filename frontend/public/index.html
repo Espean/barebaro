@@ -81,6 +81,15 @@
       }, 0);
     }
 
+    function addStopAtEnd(region) {
+      // Remove previous listeners (if any)
+      region.un && region.un('out');
+      region.on('out', () => {
+        ws.pause();
+        ws.seekTo(region.end / ws.getDuration());
+      });
+    }
+
     function setupWaveSurfer(blobUrl) {
       if (ws) ws.destroy();
       regions = RegionsPlugin.create();
@@ -104,12 +113,16 @@
           content: "RESIZE ME!"
         });
         styleHandles(region);
+        addStopAtEnd(region);
       });
       regions.on("region-clicked", (region, e) => {
         e.stopPropagation();
         region.play();
       });
-      regions.on("region-created", styleHandles);
+      regions.on("region-created", (region) => {
+        styleHandles(region);
+        addStopAtEnd(region);
+      });
     }
 
     recordBtn.onclick = async () => {
