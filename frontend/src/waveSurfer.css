@@ -1,0 +1,28 @@
+/*
+  Styles for the Wavesurfer Web Component region handles.  These rules
+  leverage the ::part selectors defined by Wavesurfer to reach into
+  the Shadow DOM and customize the appearance of the left and right
+  resize handles.  They enlarge the handles, add a semi-transparent
+  background for better visibility, and increase the border thickness
+  to create a clear grab area.  Adjust widths, colors, and border
+  styles to suit your design.
+*/
+
+#waveform-wrapper wave-surfer::part(region-handle) {
+  /* Expand the clickable area from the default ~6px to 12px */
+  width: 12px !important;
+  background: rgba(0, 0, 0, 0.1);
+  cursor: ew-resize;
+}
+
+#waveform-wrapper wave-surfer::part(region-handle-left) {
+  /* Thicker left border line */
+  border-left: 4px solid rgba(0, 0, 0, 0.7) !important;
+  border-radius: 4px 0 0 4px !important;
+}
+
+#waveform-wrapper wave-surfer::part(region-handle-right) {
+  /* Thicker right border line */
+  border-right: 4px solid rgba(0, 0, 0, 0.7) !important;
+  border-radius: 0 4px 4px 0 !important;
+}
