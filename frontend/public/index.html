@@ -4,6 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Barebaros lyd</title>
+  <!-- Wavesurfer & Regions plugin from CDN (v7.x, ES module) -->
   <script type="module" src="https://unpkg.com/wavesurfer.js@7/dist/wavesurfer.esm.js"></script>
   <script type="module" src="https://unpkg.com/wavesurfer.js@7/dist/plugins/regions.esm.js"></script>
   <style>
@@ -11,72 +12,94 @@
       min-height: 100vh;
       background: linear-gradient(135deg, #e0eafc 0%, #cfdef3 100%);
       font-family: 'Segoe UI', sans-serif;
-      display: flex; flex-direction: column; align-items: center; justify-content: center;
+      display: flex; flex-direction: column; align-items: center; justify-content: flex-start;
+      padding: 40px 16px 60px;
     }
-    h1 { font-size: 36px; font-weight: 700; color: #2d3a4b; margin-bottom: 32px; }
+    h1 { font-size: 36px; font-weight: 700; color: #2d3a4b; margin: 0 0 28px; text-align:center; }
     .record-btn, .reset-btn {
       background: linear-gradient(90deg, #ff5858 0%, #f09819 100%);
       color: #fff; border: none; border-radius: 40px; padding: 20px 40px;
       font-size: 22px; font-weight: 600; box-shadow: 0 8px 32px rgba(255,88,88,0.11);
-      cursor: pointer; min-width: 240px; margin-bottom: 24px; transition: background 0.2s;
+      cursor: pointer; min-width: 240px; transition: background 0.2s;
     }
-    .reset-btn { min-width: 180px; padding: 16px 38px; margin-top: 28px; }
+    .buttons { display: flex; justify-content: center; width: 100%; margin-top: 28px; }
     .hint, .tips { color: #888; text-align: center; }
     .tips { font-size: 13px; color: #999; margin-top: 14px; }
     .waveform-wrapper {
-      max-width: 700px; width: 95%; min-height: 180px; margin: 32px auto 0; position: relative;
+      max-width: 720px; width: 95%; min-height: 180px; margin: 12px auto 0; position: relative;
+    }
+
+    /* ===== Big, inside-the-region handles (no outside overflow) ===== */
+    .ws-region-handle {
+      position: absolute;
+      top: 0;
+      height: 100% !important;
+      width: 56px !important;          /* actual big hit area */
+      min-width: 56px !important;
+      cursor: ew-resize !important;
+      z-index: 10;
+      pointer-events: auto !important;
+      background: transparent;          /* we draw the color via gradient below */
+    }
+    /* left handle lives inside region on the left side */
+    .ws-region-handle[data-resize="start"] {
+      left: 0;
+      /* draw a soft blue pad INSIDE the region (no visual overflow) */
+      background: linear-gradient(to right, rgba(0,105,255,0.15) 0 56px, transparent 56px);
+      box-shadow: inset 2px 0 0 rgba(45,58,75,0.25);      /* thin inner divider */
+      border-radius: 2px 0 0 2px;
+    }
+    /* right handle lives inside region on the right side */
+    .ws-region-handle[data-resize="end"] {
+      right: 0;
+      background: linear-gradient(to left, rgba(0,105,255,0.15) 0 56px, transparent 56px);
+      box-shadow: inset -2px 0 0 rgba(45,58,75,0.25);
+      border-radius: 0 2px 2px 0;
     }
   </style>
 </head>
 <body>
   <h1>Barebaros lyd</h1>
-  <button class="record-btn" id="record">Start opptak</button>
+
   <div class="waveform-wrapper">
     <div id="waveform"></div>
-    <div class="hint" style="display:none;">Dra/endre det grønne området, <b>trykk på det for å spille av</b></div>
-    <button class="reset-btn" id="reset" style="display:none;">Ta opp nytt</button>
+
+    <div class="hint" style="display:none;">
+      Dra/endre det grønne området, <b>trykk på det for å spille av</b>
+    </div>
+
+    <div class="buttons">
+      <button class="record-btn" id="record">Start opptak</button>
+      <button class="reset-btn" id="reset" style="display:none; margin-left:16px;">Ta opp nytt</button>
+    </div>
+
     <div class="tips" style="display:none;">Tips: Trykk på det grønne feltet for å spille valgt område</div>
   </div>
+
   <script type="module">
     import WaveSurfer from "https://unpkg.com/wavesurfer.js@7/dist/wavesurfer.esm.js";
     import RegionsPlugin from "https://unpkg.com/wavesurfer.js@7/dist/plugins/regions.esm.js";
 
     const recordBtn = document.getElementById('record');
-    const resetBtn = document.getElementById('reset');
-    const waveform = document.getElementById('waveform');
-    const hint = document.querySelector('.hint');
-    const tips = document.querySelector('.tips');
+    const resetBtn  = document.getElementById('reset');
+    const waveform  = document.getElementById('waveform');
+    const hint      = document.querySelector('.hint');
+    const tips      = document.querySelector('.tips');
+
     let ws, regions, mediaRecorder, audioUrl = null, isRecording = false, chunks = [];
 
     function styleHandles(region) {
+      // Give handles our class & sizing (inside region)
       setTimeout(() => {
-        // Left
-        const left = region.element.children[0];
-        if (left) {
-          left.style.position = "absolute";
-          left.style.zIndex = "2";
-          left.style.width = "6px";
-          left.style.height = "100%";
-          left.style.top = "0px";
-          left.style.left = "0px";
-          left.style.cursor = "ew-resize";
-          left.style.borderLeft = "50px solid rgba(0, 105, 255, 0.15)";
-          left.style.borderRadius = "2px 0 0 2px";
-          left.style.background = "transparent";
-        }
-        // Right
+        const left  = region.element.children[0];
         const right = region.element.children[1];
+        if (left) {
+          left.classList.add("ws-region-handle");
+          left.dataset.resize = "start";
+        }
         if (right) {
-          right.style.position = "absolute";
-          right.style.zIndex = "2";
-          right.style.width = "6px";
-          right.style.height = "100%";
-          right.style.top = "0px";
-          right.style.right = "0px";
-          right.style.cursor = "ew-resize";
-          right.style.borderRight = "50px solid rgba(0, 105, 255, 0.15)";
-          right.style.borderRadius = "0 2px 2px 0";
-          right.style.background = "transparent";
+          right.classList.add("ws-region-handle");
+          right.dataset.resize = "end";
         }
       }, 0);
     }
@@ -86,13 +109,14 @@
       regions = RegionsPlugin.create();
       ws = WaveSurfer.create({
         container: waveform,
-        waveColor: "#43cea2",
-        progressColor: "#185a9d",
+        waveColor:   "#43cea2",
+        progressColor:"#185a9d",
         height: 160,
         url: blobUrl,
         plugins: [regions],
         responsive: true,
       });
+
       ws.on('ready', () => {
         const dur = ws.getDuration();
         const region = regions.addRegion({
@@ -101,21 +125,23 @@
           color: "rgba(63,23,39,0.35)",
           drag: true,
           resize: true,
-          content: "RESIZE ME!"
+          content: "RESIZE ME!",
         });
         styleHandles(region);
       });
 
-      // Play region and stop at end, no matter what
+      // Play exactly the region (and stop at end)
       regions.on("region-clicked", (region, e) => {
         e.stopPropagation();
-        ws.play(region.start);
 
-        // Remove old listener
+        // preferred: built-in segment play (stops automatically at `end`)
+        ws.play(region.start, region.end);
+
+        // safety net: if some browser misses stopping, use a tiny epsilon
         ws.un("timeupdate");
-
+        const EPS = 0.002; // ~2 ms guard
         ws.on("timeupdate", () => {
-          if (ws.getCurrentTime() >= region.end) {
+          if (ws.getCurrentTime() >= region.end - EPS) {
             ws.pause();
             ws.seekTo(region.end / ws.getDuration());
             ws.un("timeupdate");
@@ -123,29 +149,32 @@
         });
       });
 
-      regions.on("region-created", (region) => {
-        styleHandles(region);
-      });
+      regions.on("region-created", styleHandles);
     }
 
+    // Recording logic
     recordBtn.onclick = async () => {
       if (!isRecording) {
         recordBtn.textContent = "Stopp opptak";
         isRecording = true;
+
         const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
         mediaRecorder = new window.MediaRecorder(stream);
         chunks = [];
+
         mediaRecorder.ondataavailable = (e) => chunks.push(e.data);
         mediaRecorder.onstop = () => {
           const blob = new Blob(chunks, { type: "audio/webm" });
           if (audioUrl) URL.revokeObjectURL(audioUrl);
           audioUrl = URL.createObjectURL(blob);
+
           setupWaveSurfer(audioUrl);
           hint.style.display = "block";
           resetBtn.style.display = "inline-block";
           tips.style.display = "block";
           recordBtn.style.display = "none";
         };
+
         mediaRecorder.start();
       } else {
         recordBtn.textContent = "Start opptak";
@@ -157,6 +186,7 @@
     resetBtn.onclick = () => {
       if (audioUrl) URL.revokeObjectURL(audioUrl);
       if (ws) ws.destroy();
+
       hint.style.display = tips.style.display = "none";
       resetBtn.style.display = "none";
       recordBtn.style.display = "inline-block";
