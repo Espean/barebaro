@@ -7,7 +7,8 @@ terraform {
   }
   backend "azurerm" {
     resource_group_name  = "eb-barebaro"
-    storage_account_name = "barebarolyd123"
+
+    storage_account_name = "barebarostate123"
     container_name       = "tfstate"
     key                  = "terraform.tfstate"
     subscription_id = "0e505815-503a-42ad-9e76-7b36755fbd81"
