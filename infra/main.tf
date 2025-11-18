@@ -7,22 +7,21 @@ terraform {
   }
   backend "azurerm" {
     resource_group_name  = "eb-barebaro"
-    storage_account_name = "barebarosa"
+    storage_account_name = "barebarolyd123"
     container_name       = "tfstate"
     key                  = "terraform.tfstate"
-    subscription_id = "f275d5ca-5939-420f-bba2-e502b7489668"
-    tenant_id = "8b87af7d-8647-4dc7-8df4-5f69a2011bb5"
-    client_id = "fc516b06-7c5c-474a-9379-949fa0b54e51"
+    subscription_id = "0e505815-503a-42ad-9e76-7b36755fbd81"
+    tenant_id = "b7cded65-4f72-4ee3-b7de-0806e47607a4"
+    client_id = "a9ef53c5-9684-4987-9cb4-9b49f1fa6962"
     use_oidc = true
   }
 }
-
 provider "azurerm" {
   features {}
-  subscription_id = "f275d5ca-5939-420f-bba2-e502b7489668"
+  subscription_id = "0e505815-503a-42ad-9e76-7b36755fbd81"
 }
 data "azurerm_storage_account" "existing" {
-  name                = "barebarosa"
+  name                = "barebarolyd123"
   resource_group_name = "eb-barebaro"
 }
 resource "azurerm_storage_table" "metadata" {
@@ -81,4 +80,3 @@ resource "azurerm_static_web_app_custom_domain" "www_barebaro_no" {
   domain_name       = "www.barebaro.no"
   validation_type   = "cname-delegation"
 }
-
