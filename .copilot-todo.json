@@ -1,0 +1,26 @@
+[
+	{
+		"id": 3,
+		"title": "Restore button styling",
+		"description": "Bring back gradient hero buttons for home/record navigation",
+		"status": "done"
+	},
+	{
+		"id": 4,
+		"title": "Fix mediaDevices error",
+		"description": "Handle getUserMedia availability and provide secure-context guidance",
+		"status": "done"
+	},
+	{
+		"id": 5,
+		"title": "Reintroduce trimming UX polish",
+		"description": "Style waveform and messaging similar to original",
+		"status": "done"
+	},
+	{
+		"id": 6,
+		"title": "Fix regions plugin crash",
+		"description": "Ensure WaveSurfer regions plugin is available before calling clear/add",
+		"status": "done"
+	}
+]
