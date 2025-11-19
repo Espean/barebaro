@@ -4,8 +4,6 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Barebaros lyd</title>
-  <script type="module" src="https://unpkg.com/wavesurfer.js@7/dist/wavesurfer.esm.js"></script>
-  <script type="module" src="https://unpkg.com/wavesurfer.js@7/dist/plugins/regions.esm.js"></script>
   <style>
     body {
       min-height: 100vh;
@@ -38,17 +36,8 @@
     <div class="tips" style="display:none;">Tips: Trykk på det grønne feltet for å spille valgt område</div>
   </div>
   <script type="module">
-    import WaveSurfer from "https://unpkg.com/wavesurfer.js@7/dist/wavesurfer.esm.js";
-    import RegionsPlugin from "https://unpkg.com/wavesurfer.js@7/dist/plugins/regions.esm.js";
-
-    const recordBtn = document.getElementById('record');
-    const resetBtn = document.getElementById('reset');
-    const waveform = document.getElementById('waveform');
-    const hint = document.querySelector('.hint');
-    const tips = document.querySelector('.tips');
-    let ws, regions, mediaRecorder, audioUrl = null, isRecording = false, chunks = [];
-
-    function styleHandles(region) {
+  <div id="root"></div>
+  <script src="/static/js/bundle.js"></script>
       setTimeout(() => {
         // Left
         const left = region.element.children[0];
