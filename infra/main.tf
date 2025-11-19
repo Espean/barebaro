@@ -46,3 +46,102 @@ resource "azurerm_static_web_app" "frontend" {
   location            = "West Europe"
   sku_tier            = "Free"
 }
+
+# Audio blob container inside existing storage account (for raw sound files)
+resource "azurerm_storage_container" "audio" {
+  name                 = "audio"
+  storage_account_id   = data.azurerm_storage_account.existing.id
+  container_access_type = "blob" # Start public read for simplicity; tighten later
+}
+
+# Cosmos DB account for sound metadata (serverless, free tier)
+resource "azurerm_cosmosdb_account" "audio" {
+  name                = "barebaro-cosmos"
+  location            = azurerm_resource_group.baroweb.location
+  resource_group_name = azurerm_resource_group.baroweb.name
+  offer_type          = "Standard"
+  kind                = "GlobalDocumentDB"
+  free_tier_enabled   = true
+
+  consistency_policy {
+    consistency_level = "Session"
+  }
+
+  capabilities {
+    name = "EnableServerless"
+  }
+
+  geo_location {
+    location          = azurerm_resource_group.baroweb.location
+    failover_priority = 0
+  }
+}
+
+resource "azurerm_cosmosdb_sql_database" "audio" {
+  name                = "audio"
+  resource_group_name = azurerm_resource_group.baroweb.name
+  account_name        = azurerm_cosmosdb_account.audio.name
+}
+
+resource "azurerm_cosmosdb_sql_container" "sounds" {
+  name                = "sounds"
+  resource_group_name = azurerm_resource_group.baroweb.name
+  account_name        = azurerm_cosmosdb_account.audio.name
+  database_name       = azurerm_cosmosdb_sql_database.audio.name
+  partition_key_paths = ["/userId"]
+  partition_key_version = 2
+
+  indexing_policy {
+    indexing_mode = "consistent"
+    included_path { path = "/*" }
+    excluded_path { path = "/waveform/*" }
+  }
+
+  unique_key {
+    paths = ["/id"]
+  }
+}
+
+# Linux Function App for audio API (metadata management & SAS issuance)
+resource "azurerm_linux_function_app" "api" {
+  name                = "baro-audio-api"
+  resource_group_name = azurerm_resource_group.baroweb.name
+  location            = azurerm_resource_group.baroweb.location
+  service_plan_id     = azurerm_service_plan.function.id
+  storage_account_name       = data.azurerm_storage_account.existing.name
+  storage_account_access_key = data.azurerm_storage_account.existing.primary_access_key
+
+  identity {
+    type = "SystemAssigned"
+  }
+
+  site_config {
+    application_stack {
+      node_version = "18"
+    }
+  }
+
+  app_settings = {
+    AzureWebJobsStorage     = data.azurerm_storage_account.existing.primary_connection_string
+    FUNCTIONS_WORKER_RUNTIME = "node"
+    AUDIO_CONTAINER          = azurerm_storage_container.audio.name
+    COSMOS_ENDPOINT          = azurerm_cosmosdb_account.audio.endpoint
+    COSMOS_DATABASE          = azurerm_cosmosdb_sql_database.audio.name
+    COSMOS_CONTAINER         = azurerm_cosmosdb_sql_container.sounds.name
+    # For initial simplicity we inject key; later switch to managed identity & RBAC
+    COSMOS_KEY               = azurerm_cosmosdb_account.audio.primary_key
+  }
+}
+
+# Role assignments to enable managed identity future usage (keep even if key used initially)
+resource "azurerm_role_assignment" "api_blob_data" {
+  scope                = data.azurerm_storage_account.existing.id
+  role_definition_name = "Storage Blob Data Contributor"
+  principal_id         = azurerm_linux_function_app.api.identity[0].principal_id
+}
+
+resource "azurerm_role_assignment" "api_cosmos_data" {
+  scope                = azurerm_cosmosdb_account.audio.id
+  role_definition_name = "Cosmos DB Built-in Data Contributor"
+  principal_id         = azurerm_linux_function_app.api.identity[0].principal_id
+}

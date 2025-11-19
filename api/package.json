@@ -1,0 +1,15 @@
+{
+  "name": "barebaro-audio-api",
+  "version": "0.1.0",
+  "private": true,
+  "license": "UNLICENSED",
+  "scripts": {
+    "start": "func start",
+    "build": "echo 'No build step'",
+    "test": "echo 'No tests yet'"
+  },
+  "dependencies": {
+    "@azure/storage-blob": "^12.17.0",
+    "@azure/cosmos": "^4.0.0"
+  }
+}
