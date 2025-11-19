@@ -163,8 +163,11 @@ resource "azurerm_role_assignment" "api_blob_data_audio" {
   principal_id         = azurerm_linux_function_app.api.identity[0].principal_id
 }
 
-resource "azurerm_role_assignment" "api_cosmos_data" {
-  scope                = azurerm_cosmosdb_account.audio.id
-  role_definition_name = "Cosmos DB Built-in Data Contributor"
-  principal_id         = azurerm_linux_function_app.api.identity[0].principal_id
-}
+// NOTE: Data plane RBAC role assignment for Cosmos DB removed temporarily.
+// The role name "Cosmos DB Built-in Data Contributor" is not discoverable via
+// the current provider listing. Once ready to switch from key-based auth to
+// managed identity, list available roles and add by role_definition_id.
+// Example to discover GUID:
+// az role definition list --name "Cosmos DB*" --query '[].{Name:roleName,Id:id}' -o table
+// Then add a resource azurerm_role_assignment with role_definition_id pointing
+// to the Data Contributor GUID.
