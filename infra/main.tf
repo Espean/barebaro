@@ -58,6 +58,17 @@ resource "azurerm_storage_account" "audio" {
   min_tls_version          = "TLS1_2"
 }
 
+# Standard storage account for Function App (must support Azure Files)
+resource "azurerm_storage_account" "fn" {
+  name                     = "barebarofnstore" # adjust if taken
+  resource_group_name      = azurerm_resource_group.baroweb.name
+  location                 = azurerm_resource_group.baroweb.location
+  account_tier             = "Standard"
+  account_replication_type = "LRS"
+  account_kind             = "StorageV2"
+  min_tls_version          = "TLS1_2"
+}
+
 resource "azurerm_storage_container" "audio" {
   name                  = "audio"
   storage_account_id    = azurerm_storage_account.audio.id
@@ -114,8 +125,8 @@ resource "azurerm_linux_function_app" "api" {
   resource_group_name = azurerm_resource_group.baroweb.name
   location            = azurerm_resource_group.baroweb.location
   service_plan_id     = azurerm_service_plan.function.id
-  storage_account_name       = data.azurerm_storage_account.existing.name
-  storage_account_access_key = data.azurerm_storage_account.existing.primary_access_key
+  storage_account_name       = azurerm_storage_account.fn.name
+  storage_account_access_key = azurerm_storage_account.fn.primary_access_key
 
   identity {
     type = "SystemAssigned"
@@ -128,7 +139,7 @@ resource "azurerm_linux_function_app" "api" {
   }
 
   app_settings = {
-    AzureWebJobsStorage     = data.azurerm_storage_account.existing.primary_connection_string
+    AzureWebJobsStorage     = azurerm_storage_account.fn.primary_connection_string
     FUNCTIONS_WORKER_RUNTIME = "node"
     AUDIO_CONTAINER          = azurerm_storage_container.audio.name
     COSMOS_ENDPOINT          = azurerm_cosmosdb_account.audio.endpoint
@@ -140,8 +151,8 @@ resource "azurerm_linux_function_app" "api" {
 }
 
 # Role assignments to enable managed identity future usage (keep even if key used initially)
-resource "azurerm_role_assignment" "api_blob_data_state" {
-  scope                = data.azurerm_storage_account.existing.id
+resource "azurerm_role_assignment" "api_blob_data_fn" {
+  scope                = azurerm_storage_account.fn.id
   role_definition_name = "Storage Blob Data Contributor"
   principal_id         = azurerm_linux_function_app.api.identity[0].principal_id
 }
