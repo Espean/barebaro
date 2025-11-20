@@ -9,6 +9,14 @@ const parseNumber = (value, fallback = 0) => {
   return Number.isFinite(n) ? n : fallback;
 };
 
+const slugify = (value) =>
+  value
+    .toLowerCase()
+    .trim()
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-+|-+$/g, '')
+    .slice(0, 48);
+
 module.exports = async function createSound(context, req) {
   try {
     if (!req.body) {
@@ -51,19 +59,23 @@ module.exports = async function createSound(context, req) {
       : contentType.includes('ogg')
       ? 'ogg'
       : 'webm';
-
-    const blobName = `${userId}/${soundId}.${safeExt}`;
+    const nameSlug = slugify(name);
+    const baseFileName = nameSlug ? `${nameSlug}-${soundId}` : soundId;
+    const fileName = `${baseFileName}.${safeExt}`;
+    const blobName = `${userId}/${fileName}`;
 
     const nowIso = new Date().toISOString();
     const item = {
       id: soundId,
       userId,
       name,
+      displayName: name,
       clipStart,
       clipEnd,
       duration,
       contentType,
       blobName,
+      fileName,
       blobUrl: `${storageUrl().replace(/\/$/, '')}/${audioContainer()}/${blobName}`,
       status: 'pending',
       createdAt: nowIso,
