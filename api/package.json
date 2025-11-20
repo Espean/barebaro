@@ -1,0 +1,14 @@
+{
+  "name": "baro-audio-api",
+  "version": "0.1.0",
+  "description": "Azure Functions API for Barebaro audio storage and metadata",
+  "scripts": {
+    "start": "func start",
+    "test": "echo \"No tests defined\""
+  },
+  "dependencies": {
+    "@azure/cosmos": "^4.2.0",
+    "@azure/storage-blob": "^12.23.0",
+    "uuid": "^9.0.1"
+  }
+}

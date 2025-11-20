@@ -147,6 +147,9 @@ resource "azurerm_linux_function_app" "api" {
     COSMOS_CONTAINER         = azurerm_cosmosdb_sql_container.sounds.name
     # For initial simplicity we inject key; later switch to managed identity & RBAC
     COSMOS_KEY               = azurerm_cosmosdb_account.audio.primary_key
+    AUDIO_STORAGE_ACCOUNT    = azurerm_storage_account.audio.name
+    AUDIO_STORAGE_KEY        = azurerm_storage_account.audio.primary_access_key
+    AUDIO_STORAGE_URL        = azurerm_storage_account.audio.primary_blob_endpoint
   }
 }
 

@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Barebaros lyd | Listen</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Segoe+UI:wght@400;600;700&display=swap" rel="stylesheet" />
+  <style>
+    body {
+      min-height: 100vh;
+      margin: 0;
+      background: linear-gradient(135deg, #e0eafc 0%, #cfdef3 100%);
+      font-family: 'Segoe UI', sans-serif;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: flex-start;
+      padding: 48px 24px 72px;
+    }
+    .page-nav {
+      display: flex;
+      gap: 16px;
+      margin-bottom: 32px;
+    }
+    .page-nav a {
+      text-decoration: none;
+      color: #fff;
+      background: linear-gradient(90deg, #185a9d 0%, #43cea2 100%);
+      padding: 12px 28px;
+      border-radius: 28px;
+      font-weight: 600;
+      box-shadow: 0 6px 20px rgba(24, 90, 157, 0.18);
+      transition: transform 0.2s ease, box-shadow 0.2s ease;
+    }
+    .page-nav a:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 10px 24px rgba(24, 90, 157, 0.28);
+    }
+    .page-nav a.active {
+      background: linear-gradient(90deg, #ff5858 0%, #f09819 100%);
+    }
+    h1 {
+      font-size: 36px;
+      font-weight: 700;
+      color: #2d3a4b;
+      margin: 0 0 24px;
+      text-align: center;
+    }
+    .subtitle {
+      color: #4f5b6c;
+      font-size: 18px;
+      margin-bottom: 36px;
+      text-align: center;
+      max-width: 720px;
+    }
+    .sound-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+      gap: 24px;
+      width: min(960px, 100%);
+    }
+    .sound-card {
+      background: rgba(255, 255, 255, 0.75);
+      border-radius: 24px;
+      padding: 24px;
+      box-shadow: 0 14px 44px rgba(0, 0, 0, 0.08);
+      backdrop-filter: blur(8px);
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+    .sound-card h2 {
+      margin: 0;
+      font-size: 22px;
+      color: #1f2b3a;
+    }
+    .sound-card p {
+      margin: 0;
+      font-size: 15px;
+      color: #5f6c7c;
+      line-height: 1.6;
+    }
+    .empty-state {
+      text-align: center;
+      color: #5f6c7c;
+      font-size: 16px;
+      background: rgba(255, 255, 255, 0.7);
+      border-radius: 24px;
+      padding: 32px;
+      box-shadow: 0 12px 36px rgba(0, 0, 0, 0.08);
+      backdrop-filter: blur(6px);
+    }
+    .cta-link {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      margin-top: 18px;
+      padding: 12px 26px;
+      border-radius: 28px;
+      background: linear-gradient(90deg, #ff5858 0%, #f09819 100%);
+      color: #fff;
+      font-weight: 600;
+      text-decoration: none;
+      box-shadow: 0 8px 28px rgba(255, 88, 88, 0.18);
+    }
+  </style>
+</head>
+<body>
+  <nav class="page-nav">
+    <a href="index.html">Record</a>
+    <a href="listen.html" class="active">Listen</a>
+  </nav>
+  <h1>Listen to your takes</h1>
+  <p class="subtitle">Browse, preview, and manage everything you have stored. This gallery keeps the same look and feel as the recorder and is ready for more pages later.</p>
+  <div class="sound-grid" id="sound-grid">
+    <div class="empty-state" id="empty-state">
+      <strong>No sounds stored yet.</strong>
+      <div>Save a take from the record page and they will appear here for playback and trimming.</div>
+      <a class="cta-link" href="index.html">Go record something</a>
+    </div>
+  </div>
+</body>
+</html>

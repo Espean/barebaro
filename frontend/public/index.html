@@ -13,6 +13,28 @@
       font-family: 'Segoe UI', sans-serif;
       display: flex; flex-direction: column; align-items: center; justify-content: center;
     }
+    .page-nav {
+      display: flex;
+      gap: 16px;
+      margin-bottom: 24px;
+    }
+    .page-nav a {
+      text-decoration: none;
+      color: #fff;
+      background: linear-gradient(90deg, #185a9d 0%, #43cea2 100%);
+      padding: 12px 28px;
+      border-radius: 28px;
+      font-weight: 600;
+      box-shadow: 0 6px 20px rgba(24, 90, 157, 0.18);
+      transition: transform 0.2s ease, box-shadow 0.2s ease;
+    }
+    .page-nav a:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 10px 24px rgba(24, 90, 157, 0.28);
+    }
+    .page-nav a.active {
+      background: linear-gradient(90deg, #ff5858 0%, #f09819 100%);
+    }
     h1 { font-size: 36px; font-weight: 700; color: #2d3a4b; margin-bottom: 32px; }
     .record-btn, .reset-btn {
       background: linear-gradient(90deg, #ff5858 0%, #f09819 100%);
@@ -29,6 +51,10 @@
   </style>
 </head>
 <body>
+  <nav class="page-nav">
+    <a href="index.html" class="active">Record</a>
+    <a href="listen.html">Listen</a>
+  </nav>
   <h1>Barebaros lyd</h1>
   <button class="record-btn" id="record">Start opptak</button>
   <div class="waveform-wrapper">

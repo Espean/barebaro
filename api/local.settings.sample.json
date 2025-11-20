@@ -1,0 +1,15 @@
+{
+  "IsEncrypted": false,
+  "Values": {
+    "FUNCTIONS_WORKER_RUNTIME": "node",
+    "AzureWebJobsStorage": "UseDevelopmentStorage=true",
+    "AUDIO_CONTAINER": "audio",
+    "COSMOS_ENDPOINT": "https://<your-account>.documents.azure.com:443/",
+    "COSMOS_DATABASE": "audio",
+    "COSMOS_CONTAINER": "sounds",
+    "COSMOS_KEY": "<cosmos-key>",
+    "AUDIO_STORAGE_ACCOUNT": "<storage-account-name>",
+    "AUDIO_STORAGE_KEY": "<storage-account-key>",
+    "AUDIO_STORAGE_URL": "https://<storage-account-name>.blob.core.windows.net"
+  }
+}
