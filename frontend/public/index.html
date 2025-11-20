@@ -4,8 +4,8 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Barebaros lyd</title>
-  <script type="module" src="https://unpkg.com/wavesurfer.js@7.9.9/dist/wavesurfer.esm.js"></script>
-  <script type="module" src="https://unpkg.com/wavesurfer.js@7.9.9/dist/plugins/regions.esm.js"></script>
+  <script type="module" src="https://unpkg.com/wavesurfer.js@7/dist/wavesurfer.esm.js"></script>
+  <script type="module" src="https://unpkg.com/wavesurfer.js@7/dist/plugins/regions.esm.js"></script>
   <style>
     body {
       min-height: 100vh;
@@ -38,8 +38,8 @@
     <div class="tips" style="display:none;">Tips: Trykk på det grønne feltet for å spille valgt område</div>
   </div>
   <script type="module">
-    import WaveSurfer from "https://unpkg.com/wavesurfer.js@7.9.9/dist/wavesurfer.esm.js";
-    import RegionsPlugin from "https://unpkg.com/wavesurfer.js@7.9.9/dist/plugins/regions.esm.js";
+    import WaveSurfer from "https://unpkg.com/wavesurfer.js@7/dist/wavesurfer.esm.js";
+    import RegionsPlugin from "https://unpkg.com/wavesurfer.js@7/dist/plugins/regions.esm.js";
 
     const recordBtn = document.getElementById('record');
     const resetBtn = document.getElementById('reset');
@@ -47,7 +47,6 @@
     const hint = document.querySelector('.hint');
     const tips = document.querySelector('.tips');
     let ws, regions, mediaRecorder, audioUrl = null, isRecording = false, chunks = [];
-    let stopHandler = null; // holds the active timeupdate handler guarding end playback
 
     function styleHandles(region) {
       setTimeout(() => {
@@ -84,7 +83,6 @@
 
     function setupWaveSurfer(blobUrl) {
       if (ws) ws.destroy();
-      stopHandler = null;
       regions = RegionsPlugin.create();
       ws = WaveSurfer.create({
         container: waveform,
@@ -134,21 +132,14 @@
 
         // Safety net for browsers that ignore the end param occasionally
         const EPS = 0.0015;
-        if (stopHandler) {
-          ws.un("timeupdate", stopHandler);
-        }
-
-        stopHandler = () => {
+        ws.un("timeupdate");
+        ws.on("timeupdate", () => {
           if (ws.getCurrentTime() >= visualEnd - EPS) {
-            ws.un("timeupdate", stopHandler);
-            stopHandler = null;
             ws.pause();
-            // Delay the seek so wavesurfer finishes emitting the current event stack
-            requestAnimationFrame(() => ws.seekTo(visualEnd / dur));
+            ws.seekTo(visualEnd / dur);
+            ws.un("timeupdate");
           }
-        };
-
-        ws.on("timeupdate", stopHandler);
+        });
       });
 
       regions.on("region-created", (region) => {
@@ -186,10 +177,6 @@
 
     resetBtn.onclick = () => {
       if (audioUrl) URL.revokeObjectURL(audioUrl);
-      if (stopHandler && ws) {
-        ws.un("timeupdate", stopHandler);
-      }
-      stopHandler = null;
       if (ws) ws.destroy();
       hint.style.display = tips.style.display = "none";
       resetBtn.style.display = "none";
