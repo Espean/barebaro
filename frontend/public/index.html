@@ -61,6 +61,7 @@
     <div id="waveform"></div>
     <div class="hint" style="display:none;">Dra/endre det grønne området, <b>trykk på det for å spille av</b></div>
     <button class="reset-btn" id="reset" style="display:none;">Ta opp nytt</button>
+    <button class="reset-btn" id="save" style="display:none;">Lagre klipp</button>
     <div class="tips" style="display:none;">Tips: Trykk på det grønne feltet for å spille valgt område</div>
   </div>
   <script type="module">
@@ -69,10 +70,18 @@
 
     const recordBtn = document.getElementById('record');
     const resetBtn = document.getElementById('reset');
+    const saveBtn = document.getElementById('save');
     const waveform = document.getElementById('waveform');
     const hint = document.querySelector('.hint');
     const tips = document.querySelector('.tips');
     let ws, regions, mediaRecorder, audioUrl = null, isRecording = false, chunks = [];
+    window.bareo = {
+      get ws() { return ws; },
+      get regions() { return regions; },
+      get audioUrl() { return audioUrl; },
+      set audioUrl(value) { audioUrl = value; },
+      get duration() { return ws ? ws.getDuration() : 0; },
+    };
 
     function styleHandles(region) {
       setTimeout(() => {
@@ -190,6 +199,7 @@
           setupWaveSurfer(audioUrl);
           hint.style.display = "block";
           resetBtn.style.display = "inline-block";
+          saveBtn.style.display = "inline-block";
           tips.style.display = "block";
           recordBtn.style.display = "none";
         };
@@ -206,9 +216,11 @@
       if (ws) ws.destroy();
       hint.style.display = tips.style.display = "none";
       resetBtn.style.display = "none";
+      saveBtn.style.display = "none";
       recordBtn.style.display = "inline-block";
       waveform.innerHTML = "";
     };
   </script>
+  <script type="module" src="./upload.js"></script>
 </body>
 </html>
