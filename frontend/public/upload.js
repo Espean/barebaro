@@ -44,9 +44,13 @@ const uploadRecording = async () => {
   try {
     ensureWave();
 
-    const name = prompt('Gi klippet et navn');
-    if (!name || !name.trim()) {
-      return;
+    const rawName = window.bareo ? window.bareo.clipName : '';
+    const name = rawName ? rawName.trim() : '';
+    if (!name) {
+      if (window.bareo && typeof window.bareo.focusName === 'function') {
+        window.bareo.focusName();
+      }
+      throw new Error('Gi klippet et navn før du lagrer.');
     }
 
     if (!window.bareo.audioUrl) {
@@ -60,7 +64,7 @@ const uploadRecording = async () => {
     }
 
     const createPayload = {
-      name: name.trim(),
+      name,
       ...clip,
       contentType: 'audio/webm',
     };
@@ -95,8 +99,14 @@ const uploadRecording = async () => {
       }),
     });
 
-    alert('Klippet ble lagret!
-Du finner det under "Listen".');
+    if (window.bareo) {
+      window.bareo.clipName = '';
+      if (typeof window.bareo.focusName === 'function') {
+        window.bareo.focusName();
+      }
+    }
+
+    alert('Klippet ble lagret!\nDu finner det under "Listen".');
   } catch (error) {
     console.error('Upload failed', error);
     alert(error.message || 'Klarte ikke å lagre klippet.');

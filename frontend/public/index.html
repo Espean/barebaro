@@ -43,6 +43,23 @@
       cursor: pointer; min-width: 240px; margin-bottom: 24px; transition: background 0.2s;
     }
     .reset-btn { min-width: 180px; padding: 16px 38px; margin-top: 28px; }
+    .name-input {
+      display: none;
+      border: none;
+      border-radius: 32px;
+      padding: 16px 22px;
+      font-size: 18px;
+      width: 100%;
+      max-width: 360px;
+      margin: 12px auto 0;
+      background: rgba(255, 255, 255, 0.85);
+      box-shadow: 0 6px 24px rgba(0,0,0,0.08);
+      text-align: center;
+      color: #2d3a4b;
+    }
+    .name-input::placeholder {
+      color: #8a96a8;
+    }
     .hint, .tips { color: #888; text-align: center; }
     .tips { font-size: 13px; color: #999; margin-top: 14px; }
     .waveform-wrapper {
@@ -62,6 +79,7 @@
     <div class="hint" style="display:none;">Dra/endre det grønne området, <b>trykk på det for å spille av</b></div>
     <button class="reset-btn" id="reset" style="display:none;">Ta opp nytt</button>
     <button class="reset-btn" id="save" style="display:none;">Lagre klipp</button>
+    <input id="clip-name" class="name-input" type="text" placeholder="Gi klippet et navn" autocomplete="off" />
     <div class="tips" style="display:none;">Tips: Trykk på det grønne feltet for å spille valgt område</div>
   </div>
   <script type="module">
@@ -71,6 +89,7 @@
     const recordBtn = document.getElementById('record');
     const resetBtn = document.getElementById('reset');
     const saveBtn = document.getElementById('save');
+    const nameInput = document.getElementById('clip-name');
     const waveform = document.getElementById('waveform');
     const hint = document.querySelector('.hint');
     const tips = document.querySelector('.tips');
@@ -81,6 +100,9 @@
       get audioUrl() { return audioUrl; },
       set audioUrl(value) { audioUrl = value; },
       get duration() { return ws ? ws.getDuration() : 0; },
+      get clipName() { return nameInput ? nameInput.value : ''; },
+      set clipName(value) { if (nameInput) nameInput.value = value; },
+      focusName() { if (nameInput) nameInput.focus(); },
     };
 
     function styleHandles(region) {
@@ -187,6 +209,10 @@
       if (!isRecording) {
         recordBtn.textContent = "Stopp opptak";
         isRecording = true;
+        if (nameInput) {
+          nameInput.style.display = "none";
+          nameInput.value = "";
+        }
         const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
         mediaRecorder = new window.MediaRecorder(stream);
         chunks = [];
@@ -202,6 +228,11 @@
           saveBtn.style.display = "inline-block";
           tips.style.display = "block";
           recordBtn.style.display = "none";
+          if (nameInput) {
+            nameInput.value = "";
+            nameInput.style.display = "block";
+            nameInput.focus();
+          }
         };
         mediaRecorder.start();
       } else {
@@ -219,6 +250,10 @@
       saveBtn.style.display = "none";
       recordBtn.style.display = "inline-block";
       waveform.innerHTML = "";
+      if (nameInput) {
+        nameInput.style.display = "none";
+        nameInput.value = "";
+      }
     };
   </script>
   <script type="module" src="./upload.js"></script>
