@@ -173,6 +173,16 @@ resource "azurerm_linux_function_app" "api" {
     application_stack {
       node_version = "18"
     }
+
+    cors {
+      allowed_origins = [
+        "https://www.barebaro.no",
+        "https://baro-frontend.azurestaticapps.net",
+        "http://localhost:3000",
+        "http://localhost:5173",
+        "http://localhost:7071"
+      ]
+    }
   }
 
   app_settings = {
