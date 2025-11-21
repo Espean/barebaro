@@ -4,6 +4,10 @@ terraform {
       source  = "hashicorp/azurerm"
       version = "4.34.0"
     }
+    azapi = {
+      source  = "azure/azapi"
+      version = "1.13.1"
+    }
   }
   backend "azurerm" {
     resource_group_name  = "eb-barebaro"
@@ -21,6 +25,8 @@ provider "azurerm" {
   features {}
   subscription_id = "0e505815-503a-42ad-9e76-7b36755fbd81"
 }
+
+provider "azapi" {}
 data "azurerm_storage_account" "existing" {
   name                = "barebarolyd123"
   resource_group_name = "eb-barebaro"
@@ -44,7 +50,22 @@ resource "azurerm_static_web_app" "frontend" {
   name                = "baro-frontend"
   resource_group_name = azurerm_resource_group.baroweb.name
   location            = "West Europe"
-  sku_tier            = "Free"
+  sku_tier            = "Standard"
+}
+
+# Link the Static Web App to the dedicated Function App backend for API routing.
+resource "azapi_update_resource" "frontend_backend_link" {
+  type      = "Microsoft.Web/staticSites@2023-06-01-preview"
+  name      = azurerm_static_web_app.frontend.name
+  parent_id = azurerm_resource_group.baroweb.id
+
+  body = jsonencode({
+    properties = {
+      linkedBackendResourceId = azurerm_linux_function_app.api.id
+    }
+  })
+
+  depends_on = [azurerm_static_web_app.frontend, azurerm_linux_function_app.api]
 }
 
 # Dedicated standard storage account for audio blobs (avoid Premium restrictions)
