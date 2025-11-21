@@ -55,7 +55,7 @@ resource "azurerm_static_web_app" "frontend" {
 
 # Link the Static Web App to the dedicated Function App backend for API routing.
 resource "azapi_update_resource" "frontend_backend_link" {
-  type      = "Microsoft.Web/staticSites@2023-06-01-preview"
+  type      = "Microsoft.Web/staticSites@2024-11-01"
   name      = azurerm_static_web_app.frontend.name
   parent_id = azurerm_resource_group.baroweb.id
 
