@@ -169,13 +169,6 @@ resource "azurerm_linux_function_app" "api" {
     type = "SystemAssigned"
   }
 
-  lifecycle {
-    ignore_changes = [
-      auth_settings,
-      auth_settings_v2
-    ]
-  }
-
   site_config {
     application_stack {
       node_version = "18"
@@ -193,6 +186,12 @@ resource "azurerm_linux_function_app" "api" {
 
     application_insights_connection_string = azurerm_application_insights.api.connection_string
   }
+    auth_settings_v2 {
+      auth_enabled = false
+
+      login {}
+    }
+
 
   app_settings = {
     AzureWebJobsStorage     = azurerm_storage_account.fn.primary_connection_string
