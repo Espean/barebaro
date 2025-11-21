@@ -162,6 +162,13 @@ resource "azurerm_linux_function_app" "api" {
     type = "SystemAssigned"
   }
 
+  lifecycle {
+    ignore_changes = [
+      auth_settings,
+      auth_settings_v2
+    ]
+  }
+
   site_config {
     application_stack {
       node_version = "18"
