@@ -186,11 +186,10 @@ resource "azurerm_linux_function_app" "api" {
 
     application_insights_connection_string = azurerm_application_insights.api.connection_string
   }
-    auth_settings_v2 {
-      auth_enabled = false
 
-      login {}
-    }
+  auth_settings {
+    enabled = false
+  }
 
 
   app_settings = {
