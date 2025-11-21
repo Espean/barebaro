@@ -51,11 +51,19 @@ resource "azurerm_static_web_app" "frontend" {
   resource_group_name = azurerm_resource_group.baroweb.name
   location            = "West Europe"
   sku_tier            = "Standard"
+  sku_size            = "Standard"
+
+  lifecycle {
+    ignore_changes = [
+      repository_branch,
+      repository_url
+    ]
+  }
 }
 
 # Link the Static Web App to the dedicated Function App backend for API routing.
 resource "azapi_resource" "frontend_backend_link" {
-  type      = "Microsoft.Web/staticSites/linkedBackends@2024-04-01"
+  type      = "Microsoft.Web/staticSites/linkedBackends@2023-12-01"
   name      = "default"
   parent_id = azurerm_static_web_app.frontend.id
 
