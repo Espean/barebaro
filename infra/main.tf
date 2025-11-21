@@ -149,6 +149,13 @@ resource "azurerm_cosmosdb_sql_container" "sounds" {
   }
 }
 
+resource "azurerm_application_insights" "api" {
+  name                = "baro-audio-ai"
+  location            = azurerm_resource_group.baroweb.location
+  resource_group_name = azurerm_resource_group.baroweb.name
+  application_type    = "web"
+}
+
 # Linux Function App for audio API (metadata management & SAS issuance)
 resource "azurerm_linux_function_app" "api" {
   name                = "baro-audio-api"
@@ -183,6 +190,8 @@ resource "azurerm_linux_function_app" "api" {
         "http://localhost:7071"
       ]
     }
+
+    application_insights_connection_string = azurerm_application_insights.api.connection_string
   }
 
   app_settings = {
@@ -197,6 +206,8 @@ resource "azurerm_linux_function_app" "api" {
     AUDIO_STORAGE_ACCOUNT    = azurerm_storage_account.audio.name
     AUDIO_STORAGE_KEY        = azurerm_storage_account.audio.primary_access_key
     AUDIO_STORAGE_URL        = azurerm_storage_account.audio.primary_blob_endpoint
+    APPLICATIONINSIGHTS_CONNECTION_STRING = azurerm_application_insights.api.connection_string
+    APPINSIGHTS_INSTRUMENTATIONKEY        = azurerm_application_insights.api.instrumentation_key
   }
 }
 
