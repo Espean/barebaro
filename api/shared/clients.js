@@ -1,5 +1,11 @@
 'use strict';
 
+const nodeCrypto = require('crypto');
+
+if (!globalThis.crypto && nodeCrypto.webcrypto) {
+  globalThis.crypto = nodeCrypto.webcrypto;
+}
+
 const { CosmosClient } = require('@azure/cosmos');
 const {
   BlobServiceClient,

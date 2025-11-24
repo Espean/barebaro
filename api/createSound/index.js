@@ -1,6 +1,12 @@
 'use strict';
 
-const { v4: uuid } = require('uuid');
+const nodeCrypto = require('crypto');
+
+if (!globalThis.crypto && nodeCrypto.webcrypto) {
+  globalThis.crypto = nodeCrypto.webcrypto;
+}
+
+const { randomUUID } = nodeCrypto;
 const { getCosmosContainer, createUploadSas } = require('../shared/clients');
 const { getUserId, audioContainer, storageUrl } = require('../shared/config');
 
@@ -51,7 +57,7 @@ module.exports = async function createSound(context, req) {
     }
 
     const container = getCosmosContainer();
-    const soundId = uuid();
+    const soundId = randomUUID();
     const safeExt = contentType.includes('mp3')
       ? 'mp3'
       : contentType.includes('wav')
