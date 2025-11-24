@@ -3,7 +3,7 @@
     {
       "route": "/api/*",
       "allowedRoles": ["anonymous"],
-      "backend": "default"
+      "backend": "baro-audio-api"
     }
   ],
   "navigationFallback": {
