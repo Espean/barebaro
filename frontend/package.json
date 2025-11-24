@@ -10,8 +10,6 @@
     "wavesurfer.js": "^7.9.9"
   },
   "scripts": {
-    "preinstall": "node -v && npm -v",
-    "postinstall": "ls -l node_modules && npm list --depth=0",
     "start": "react-scripts start",
     "build": "react-scripts build",
     "test": "react-scripts test",
