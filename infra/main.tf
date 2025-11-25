@@ -86,6 +86,19 @@ resource "azurerm_storage_account" "audio" {
   account_replication_type = "LRS"
   account_kind             = "StorageV2"
   min_tls_version          = "TLS1_2"
+
+  blob_properties {
+    cors_rule {
+      allowed_headers    = ["*"]
+      allowed_methods    = ["GET"]
+      allowed_origins    = [
+        "https://www.barebaro.no",
+        "http://localhost:4280",
+      ]
+      exposed_headers    = ["*"]
+      max_age_in_seconds = 3600
+    }
+  }
 }
 
 # Standard storage account for Function App (must support Azure Files)

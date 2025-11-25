@@ -122,6 +122,10 @@ const renderSound = (sound) => {
     const playerWrapper = document.createElement('div');
     playerWrapper.className = 'player-wrapper';
 
+    const waveform = document.createElement('div');
+    waveform.className = 'waveform';
+    playerWrapper.appendChild(waveform);
+
     const controls = document.createElement('div');
     controls.className = 'player-controls';
 
@@ -137,12 +141,7 @@ const renderSound = (sound) => {
 
     controls.appendChild(playButton);
     controls.appendChild(deleteButton);
-
-    const waveform = document.createElement('div');
-    waveform.className = 'waveform';
-
     playerWrapper.appendChild(controls);
-    playerWrapper.appendChild(waveform);
     card.appendChild(playerWrapper);
 
     const waveSurfer = WaveSurfer.create({
