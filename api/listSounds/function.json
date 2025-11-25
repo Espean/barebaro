@@ -7,7 +7,7 @@
       "direction": "in",
       "name": "req",
       "methods": ["get"],
-      "route": "sounds/list"
+      "route": "sounds"
     },
     {
       "type": "http",
