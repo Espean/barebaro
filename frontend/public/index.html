@@ -113,12 +113,14 @@
     const waveform = document.getElementById('waveform');
     const hint = document.querySelector('.hint');
     const tips = document.querySelector('.tips');
-    let ws, regions, mediaRecorder, audioUrl = null, isRecording = false, chunks = [];
+    let ws, regions, mediaRecorder, audioUrl = null, recordedBlob = null, isRecording = false, chunks = [];
     window.bareo = {
       get ws() { return ws; },
       get regions() { return regions; },
       get audioUrl() { return audioUrl; },
       set audioUrl(value) { audioUrl = value; },
+      get recordedBlob() { return recordedBlob; },
+      set recordedBlob(value) { recordedBlob = value; },
       get duration() { return ws ? ws.getDuration() : 0; },
       get clipName() { return nameInput ? nameInput.value : ''; },
       set clipName(value) { if (nameInput) nameInput.value = value; },
@@ -235,12 +237,14 @@
         }
         const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
         mediaRecorder = new window.MediaRecorder(stream);
+        recordedBlob = null;
         chunks = [];
         mediaRecorder.ondataavailable = (e) => chunks.push(e.data);
         mediaRecorder.onstop = () => {
           const blob = new Blob(chunks, { type: "audio/webm" });
           if (audioUrl) URL.revokeObjectURL(audioUrl);
           audioUrl = URL.createObjectURL(blob);
+          recordedBlob = blob;
 
           setupWaveSurfer(audioUrl);
           hint.style.display = "block";
@@ -270,6 +274,7 @@
       saveBtn.style.display = "none";
       recordBtn.style.display = "inline-block";
       waveform.innerHTML = "";
+      recordedBlob = null;
       if (nameInput) {
         nameInput.style.display = "none";
         nameInput.value = "";
