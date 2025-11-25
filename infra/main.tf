@@ -226,6 +226,7 @@ resource "azurerm_linux_function_app" "api" {
     AUDIO_STORAGE_URL        = azurerm_storage_account.audio.primary_blob_endpoint
     APPLICATIONINSIGHTS_CONNECTION_STRING = azurerm_application_insights.api.connection_string
     APPINSIGHTS_INSTRUMENTATIONKEY        = azurerm_application_insights.api.instrumentation_key
+    ADMIN_ALLOWED_OBJECT_IDS = join(",", var.admin_object_ids)
   }
 }
 

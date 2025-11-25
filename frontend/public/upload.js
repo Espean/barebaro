@@ -4,6 +4,42 @@ const API_BASE = window.location.hostname === 'localhost'
 
 const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 
+let statusElement;
+
+const ensureStatusElement = () => {
+  if (statusElement && document.body.contains(statusElement)) {
+    return statusElement;
+  }
+  const existing = document.getElementById('upload-status');
+  if (existing) {
+    statusElement = existing;
+    return statusElement;
+  }
+  const wrapper = document.querySelector('.waveform-wrapper');
+  const el = document.createElement('div');
+  el.id = 'upload-status';
+  el.className = 'upload-status';
+  el.setAttribute('role', 'status');
+  el.setAttribute('aria-live', 'polite');
+  (wrapper || document.body).appendChild(el);
+  statusElement = el;
+  return statusElement;
+};
+
+const setStatus = (message, type = 'info') => {
+  const el = ensureStatusElement();
+  if (!el) return;
+  if (!message) {
+    el.textContent = '';
+    el.style.display = 'none';
+    el.removeAttribute('data-type');
+    return;
+  }
+  el.textContent = message;
+  el.dataset.type = type;
+  el.style.display = 'block';
+};
+
 const blobToBase64 = (blob) =>
   new Promise((resolve, reject) => {
     const reader = new FileReader();
@@ -63,6 +99,7 @@ const getClipData = () => {
 const uploadRecording = async () => {
   try {
     ensureWave();
+    setStatus('');
 
     const rawName = window.bareo ? window.bareo.clipName : '';
     const name = rawName ? rawName.trim() : '';
@@ -93,6 +130,7 @@ const uploadRecording = async () => {
       data: await blobToBase64(blob),
     };
 
+    setStatus('Lagrer klippet …');
     await fetchJson(`${API_BASE}/sounds`, {
       method: 'POST',
       body: JSON.stringify(createPayload),
@@ -105,10 +143,10 @@ const uploadRecording = async () => {
       }
     }
 
-    alert('Klippet ble lagret!\nDu finner det under "Listen".');
+    setStatus('Klippet ble lagret. Du finner det under "Listen".', 'success');
   } catch (error) {
     console.error('Upload failed', error);
-    alert(error.message || 'Klarte ikke å lagre klippet.');
+    setStatus(error.message || 'Klarte ikke å lagre klippet.', 'error');
   }
 };
 
@@ -127,3 +165,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   });
 });
+
+const resetStatus = () => setStatus('');
+
+document.getElementById('reset')?.addEventListener('click', resetStatus);

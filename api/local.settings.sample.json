@@ -10,6 +10,7 @@
     "COSMOS_KEY": "<cosmos-key>",
     "AUDIO_STORAGE_ACCOUNT": "<storage-account-name>",
     "AUDIO_STORAGE_KEY": "<storage-account-key>",
-    "AUDIO_STORAGE_URL": "https://<storage-account-name>.blob.core.windows.net"
+    "AUDIO_STORAGE_URL": "https://<storage-account-name>.blob.core.windows.net",
+    "ADMIN_ALLOWED_OBJECT_IDS": "<comma-separated-object-ids-or-*>"
   }
 }

@@ -65,12 +65,31 @@
     .waveform-wrapper {
       max-width: 700px; width: 95%; min-height: 180px; margin: 32px auto 0; position: relative;
     }
+    .upload-status {
+      display: none;
+      margin-top: 18px;
+      padding: 12px 22px;
+      border-radius: 20px;
+      font-weight: 600;
+      color: #1f2b3a;
+      background: rgba(255, 255, 255, 0.85);
+      box-shadow: 0 6px 20px rgba(0, 0, 0, 0.08);
+    }
+    .upload-status[data-type="success"] {
+      color: #18604b;
+      background: rgba(67, 206, 162, 0.18);
+    }
+    .upload-status[data-type="error"] {
+      color: #7a1c21;
+      background: rgba(255, 88, 88, 0.18);
+    }
   </style>
 </head>
 <body>
   <nav class="page-nav">
     <a href="index.html" class="active">Record</a>
     <a href="listen.html">Listen</a>
+    <a href="admin.html">Admin</a>
   </nav>
   <h1>Barebaros lyd</h1>
   <button class="record-btn" id="record">Start opptak</button>
@@ -81,6 +100,7 @@
     <button class="reset-btn" id="save" style="display:none;">Lagre klipp</button>
     <input id="clip-name" class="name-input" type="text" placeholder="Gi klippet et navn" autocomplete="off" />
     <div class="tips" style="display:none;">Tips: Trykk på det grønne feltet for å spille valgt område</div>
+    <div id="upload-status" class="upload-status" role="status" aria-live="polite"></div>
   </div>
   <script type="module">
     import WaveSurfer from "https://unpkg.com/wavesurfer.js@7/dist/wavesurfer.esm.js";

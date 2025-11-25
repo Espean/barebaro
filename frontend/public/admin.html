@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Barebaros lyd | Listen</title>
+  <title>Barebaros lyd | Admin</title>
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Segoe+UI:wght@400;600;700&display=swap" rel="stylesheet" />
@@ -41,17 +41,31 @@
     .page-nav a.active {
       background: linear-gradient(90deg, #ff5858 0%, #f09819 100%);
     }
+    .header-row {
+      width: min(960px, 100%);
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      align-items: flex-start;
+      margin-bottom: 28px;
+    }
+    @media (min-width: 640px) {
+      .header-row {
+        flex-direction: row;
+        justify-content: space-between;
+        align-items: center;
+      }
+    }
     h1 {
       font-size: 36px;
       font-weight: 700;
       color: #2d3a4b;
-      margin: 0 0 24px;
-      text-align: center;
+      margin: 0;
     }
     .subtitle {
       color: #4f5b6c;
       font-size: 18px;
-      margin-bottom: 36px;
+      margin-bottom: 24px;
       text-align: center;
       max-width: 720px;
     }
@@ -64,6 +78,7 @@
       color: #1f2b3a;
       font-weight: 600;
       box-shadow: 0 6px 20px rgba(0, 0, 0, 0.08);
+      width: min(960px, 100%);
     }
     .status-banner[data-type="success"] {
       color: #18604b;
@@ -72,6 +87,19 @@
     .status-banner[data-type="error"] {
       color: #7a1c21;
       background: rgba(255, 88, 88, 0.18);
+    }
+    .user-info {
+      color: #4f5b6c;
+      font-size: 15px;
+    }
+    .auth-link {
+      text-decoration: none;
+      color: #fff;
+      background: linear-gradient(120deg, #ff5858 0%, #f09819 100%);
+      padding: 10px 22px;
+      border-radius: 999px;
+      font-weight: 600;
+      box-shadow: 0 6px 20px rgba(255, 88, 88, 0.24);
     }
     .sound-grid {
       display: grid;
@@ -111,7 +139,8 @@
       align-items: center;
       flex-wrap: wrap;
     }
-    .play-btn {
+    .play-btn,
+    .delete-btn {
       border: none;
       border-radius: 999px;
       padding: 10px 20px;
@@ -128,6 +157,14 @@
     .play-btn:hover {
       transform: translateY(-1px);
       box-shadow: 0 10px 24px rgba(24, 90, 157, 0.32);
+    }
+    .delete-btn {
+      background: linear-gradient(120deg, #ff5858 0%, #f09819 100%);
+      box-shadow: 0 6px 18px rgba(255, 88, 88, 0.24);
+    }
+    .delete-btn:hover {
+      transform: translateY(-1px);
+      box-shadow: 0 10px 24px rgba(255, 88, 88, 0.32);
     }
     .waveform {
       width: 100%;
@@ -161,19 +198,23 @@
 <body>
   <nav class="page-nav">
     <a href="index.html">Record</a>
-    <a href="listen.html" class="active">Listen</a>
-    <a href="admin.html">Admin</a>
+    <a href="listen.html">Listen</a>
+    <a href="admin.html" class="active">Admin</a>
   </nav>
-  <h1>Listen to your takes</h1>
-  <p class="subtitle">Browse and preview the clips you have stored. Sletting og administrasjon skjer fra admin-siden (krever innlogging).</p>
-  <div id="listen-status" class="status-banner" role="status" aria-live="polite"></div>
-  <div class="sound-grid" id="sound-grid">
-    <div class="empty-state" id="empty-state">
-      <strong>No sounds stored yet.</strong>
-      <div>Save a take from the record page and they will appear here for playback and trimming.</div>
-      <a class="cta-link" href="index.html">Go record something</a>
+  <div class="header-row">
+    <h1>Administrer klipp</h1>
+    <a class="auth-link" href="/.auth/logout?post_logout_redirect_uri=/index.html">Logg ut</a>
+  </div>
+  <p class="subtitle">Denne siden krever Entra ID. Her kan du spille av, kontrollere metadata og slette klipp fra lagringen.</p>
+  <div id="admin-status" class="status-banner" role="status" aria-live="polite"></div>
+  <div class="user-info" id="admin-user"></div>
+  <div class="sound-grid" id="admin-grid">
+    <div class="empty-state" id="admin-empty">
+      <strong>Ingen klipp å vise.</strong>
+      <div>Last siden etter at du har lagret noe, eller gå til lytte-siden for å sjekke avspillingen.</div>
+      <a class="cta-link" href="listen.html">Til lytte-siden</a>
     </div>
   </div>
-  <script type="module" src="./listen.js"></script>
+  <script type="module" src="./admin.js"></script>
 </body>
 </html>

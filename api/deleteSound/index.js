@@ -1,7 +1,7 @@
 'use strict';
 
 const { getCosmosContainer, getBlobServiceClient } = require('../shared/clients');
-const { getUserId, audioContainer } = require('../shared/config');
+const { getUserId, audioContainer, isAdmin } = require('../shared/config');
 
 module.exports = async function deleteSound(context, req) {
   try {
@@ -12,6 +12,14 @@ module.exports = async function deleteSound(context, req) {
       context.res = {
         status: 400,
         body: { error: 'Sound id is required.' },
+      };
+      return;
+    }
+
+    if (!isAdmin(req)) {
+      context.res = {
+        status: 403,
+        body: { error: 'Admin access required to delete sounds.' },
       };
       return;
     }

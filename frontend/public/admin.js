@@ -6,14 +6,15 @@ const API_BASE = window.location.hostname === 'localhost'
 
 const state = {
   loading: false,
+  identityLoaded: false,
 };
 
 const players = new Map();
 
-const grid = document.getElementById('sound-grid');
-const emptyState = document.getElementById('empty-state');
-const emptyStateDefaultHtml = emptyState ? emptyState.innerHTML : '';
-const statusBanner = document.getElementById('listen-status');
+const grid = document.getElementById('admin-grid');
+const emptyState = document.getElementById('admin-empty');
+const statusBanner = document.getElementById('admin-status');
+const userInfo = document.getElementById('admin-user');
 
 const escapeHtml = (value = '') =>
   String(value)
@@ -47,8 +48,54 @@ const formatTimestamp = (iso) => {
   }
 };
 
+const setStatus = (message, type = 'info') => {
+  if (!statusBanner) return;
+  if (!message) {
+    statusBanner.style.display = 'none';
+    statusBanner.textContent = '';
+    statusBanner.removeAttribute('data-type');
+    return;
+  }
+  statusBanner.textContent = message;
+  statusBanner.dataset.type = type;
+  statusBanner.style.display = 'block';
+};
+
+const setUserInfo = (principal) => {
+  if (!userInfo) return;
+  if (!principal) {
+    userInfo.textContent = 'Klarte ikke å hente brukerinfo. Forsøk å logge inn på nytt.';
+    return;
+  }
+  const name = principal.userDetails || principal.identityProvider || 'Innlogget bruker';
+  const id = principal.userId || '';
+  userInfo.innerHTML = `Innlogget som <strong>${escapeHtml(name)}</strong>${id ? ` (ID: ${escapeHtml(id)})` : ''}`;
+};
+
+const loadIdentity = async () => {
+  try {
+    const response = await fetch('/.auth/me', { credentials: 'include' });
+    if (!response.ok) {
+      setStatus('Kun innloggede brukere har tilgang til denne siden.', 'error');
+      return;
+    }
+    const payload = await response.json();
+    const principal = payload?.clientPrincipal || null;
+    if (!principal) {
+      setStatus('Fant ingen innlogget bruker. Logg inn via Entra ID.', 'error');
+      return;
+    }
+    state.identityLoaded = true;
+    setUserInfo(principal);
+  } catch (error) {
+    console.error('Failed to load identity', error);
+    setStatus('Kunne ikke hente brukerinfo. Forsøk på nytt.', 'error');
+  }
+};
+
 const fetchJson = async (path, init = {}) => {
   const response = await fetch(`${API_BASE}${path}`, {
+    credentials: 'include',
     headers: {
       'Content-Type': 'application/json',
       'x-user-id': 'demo-user',
@@ -84,28 +131,9 @@ const hideEmptyState = () => {
   emptyState.style.display = 'none';
 };
 
-const showEmptyState = (message, options = {}) => {
+const showEmptyState = () => {
   if (!emptyState) return;
   emptyState.style.display = 'block';
-  if (options.useDefault && emptyStateDefaultHtml) {
-    emptyState.innerHTML = emptyStateDefaultHtml;
-    return;
-  }
-  const text = message || 'Ingen lagrede klipp enda.';
-  emptyState.innerHTML = `<strong>${escapeHtml(text)}</strong>`;
-};
-
-const setStatus = (message, type = 'info') => {
-  if (!statusBanner) return;
-  if (!message) {
-    statusBanner.style.display = 'none';
-    statusBanner.textContent = '';
-    statusBanner.removeAttribute('data-type');
-    return;
-  }
-  statusBanner.textContent = message;
-  statusBanner.dataset.type = type;
-  statusBanner.style.display = 'block';
 };
 
 const stopAllExcept = (soundId) => {
@@ -148,7 +176,13 @@ const renderSound = (sound) => {
     playButton.className = 'play-btn';
     playButton.textContent = 'Spill av';
 
+    const deleteButton = document.createElement('button');
+    deleteButton.type = 'button';
+    deleteButton.className = 'delete-btn';
+    deleteButton.textContent = 'Slett';
+
     controls.appendChild(playButton);
+    controls.appendChild(deleteButton);
     playerWrapper.appendChild(controls);
     card.appendChild(playerWrapper);
 
@@ -184,6 +218,33 @@ const renderSound = (sound) => {
     waveSurfer.on('finish', resetPlayButton);
     waveSurfer.on('pause', resetPlayButton);
 
+    deleteButton.addEventListener('click', async () => {
+      try {
+        setStatus(`Sletter "${sound.displayName || sound.name}" …`);
+        deleteButton.disabled = true;
+        deleteButton.textContent = 'Sletter…';
+        await fetchJson(`/sounds/${encodeURIComponent(sound.id)}`, { method: 'DELETE' });
+        const player = players.get(sound.id);
+        if (player) {
+          try {
+            player.destroy();
+          } catch (error) {
+            console.warn('Failed to destroy player', error);
+          }
+          players.delete(sound.id);
+        }
+        card.remove();
+        if (!grid.querySelector('.sound-card')) {
+          showEmptyState();
+        }
+        setStatus('Klippet ble slettet.', 'success');
+      } catch (error) {
+        console.error('Failed to delete sound', error);
+        deleteButton.disabled = false;
+        deleteButton.textContent = 'Slett';
+        setStatus(error.message || 'Klarte ikke å slette klippet.', 'error');
+      }
+    });
   } else {
     const info = document.createElement('p');
     info.textContent = 'Fant ikke en avspillingslenke for dette klippet.';
@@ -198,28 +259,33 @@ const loadSounds = async () => {
   state.loading = true;
 
   try {
-    showEmptyState('Laster klipp...');
+    setStatus('Laster klipp …');
     const { items = [] } = await fetchJson('/sounds');
 
     clearExistingCards();
 
     if (!items.length) {
-      showEmptyState(null, { useDefault: true });
-      setStatus('Ingen klipp lagret ennå.');
+      showEmptyState();
+      setStatus('Ingen klipp funnet for brukeren.', 'info');
       state.loading = false;
       return;
     }
 
     hideEmptyState();
     items.forEach(renderSound);
-    setStatus('Vil du slette klipp? Åpne admin-siden (krever innlogging).');
+    setStatus('Klippene er klare. Spill av eller slett etter behov.', 'success');
   } catch (error) {
     console.error('Failed to load sounds', error);
-    showEmptyState('Klarte ikke å hente klipp. Prøv å laste siden på nytt.');
-    setStatus('Klarte ikke å hente klipp fra serveren.', 'error');
+    showEmptyState();
+    setStatus(error.message || 'Klarte ikke å hente klipp. Prøv igjen.', 'error');
   } finally {
     state.loading = false;
   }
 };
 
-document.addEventListener('DOMContentLoaded', loadSounds);
+const init = async () => {
+  await loadIdentity();
+  await loadSounds();
+};
+
+document.addEventListener('DOMContentLoaded', init);
