@@ -7,7 +7,7 @@ if (!globalThis.crypto && nodeCrypto.webcrypto) {
 }
 
 const { randomUUID } = nodeCrypto;
-const { getCosmosContainer, createUploadSas } = require('../shared/clients');
+const { getCosmosContainer, getBlobServiceClient } = require('../shared/clients');
 const { getUserId, audioContainer, storageUrl } = require('../shared/config');
 
 const parseNumber = (value, fallback = 0) => {
@@ -39,6 +39,8 @@ module.exports = async function createSound(context, req) {
     const clipEnd = parseNumber(req.body.clipEnd, 0);
     const duration = parseNumber(req.body.duration, 0);
     const contentType = (req.body.contentType || 'audio/webm').toLowerCase();
+    const declaredSize = parseNumber(req.body.size, 0);
+    const base64Data = typeof req.body.data === 'string' ? req.body.data.trim() : '';
 
     if (!name) {
       context.res = {
@@ -52,6 +54,34 @@ module.exports = async function createSound(context, req) {
       context.res = {
         status: 400,
         body: { error: 'clipEnd must be greater than clipStart.' },
+      };
+      return;
+    }
+
+    if (!base64Data) {
+      context.res = {
+        status: 400,
+        body: { error: 'Audio payload is required.' },
+      };
+      return;
+    }
+
+    let buffer;
+    try {
+      buffer = Buffer.from(base64Data, 'base64');
+    } catch (err) {
+      context.log.warn('createSound invalid base64 payload', err);
+      context.res = {
+        status: 400,
+        body: { error: 'Invalid audio payload.' },
+      };
+      return;
+    }
+
+    if (!buffer || buffer.length === 0) {
+      context.res = {
+        status: 400,
+        body: { error: 'Audio payload is empty.' },
       };
       return;
     }
@@ -70,6 +100,21 @@ module.exports = async function createSound(context, req) {
     const fileName = `${baseFileName}.${safeExt}`;
     const blobName = `${userId}/${fileName}`;
 
+    const blobService = getBlobServiceClient();
+    const containerClient = blobService.getContainerClient(audioContainer());
+    await containerClient.createIfNotExists();
+
+    const blobClient = containerClient.getBlockBlobClient(blobName);
+
+    await blobClient.uploadData(buffer, {
+      blobHTTPHeaders: { blobContentType: contentType },
+      metadata: {
+        userid: userId,
+        soundid: soundId,
+      },
+    });
+
+    const size = declaredSize > 0 ? declaredSize : buffer.length;
     const nowIso = new Date().toISOString();
     const item = {
       id: soundId,
@@ -83,21 +128,19 @@ module.exports = async function createSound(context, req) {
       blobName,
       fileName,
       blobUrl: `${storageUrl().replace(/\/$/, '')}/${audioContainer()}/${blobName}`,
-      status: 'pending',
+      status: 'ready',
       createdAt: nowIso,
       updatedAt: nowIso,
+      size,
     };
 
     await container.items.create(item);
 
-    const uploadUrl = createUploadSas({ blobName, contentType });
-
     context.res = {
       status: 201,
       body: {
-        message: 'Sound metadata created. Upload using the provided SAS URL within 15 minutes.',
+        message: 'Sound stored successfully.',
         sound: item,
-        uploadUrl,
       },
     };
   } catch (error) {

@@ -4,6 +4,26 @@ const API_BASE = window.location.hostname === 'localhost'
 
 const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 
+const blobToBase64 = (blob) =>
+  new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onerror = () => reject(new Error('Klarte ikke å lese lydfilen.'));
+    reader.onloadend = () => {
+      const result = reader.result;
+      if (typeof result !== 'string') {
+        reject(new Error('Ukjent filformat.'));
+        return;
+      }
+      const [, data = ''] = result.split(',', 2);
+      if (!data) {
+        reject(new Error('Fant ikke lyddata.')); // surface unexpected conversion issues
+        return;
+      }
+      resolve(data);
+    };
+    reader.readAsDataURL(blob);
+  });
+
 const fetchJson = async (url, options = {}) => {
   const res = await fetch(url, {
     headers: {
@@ -63,40 +83,19 @@ const uploadRecording = async () => {
       throw new Error('Ugyldige trim-grenser. Flytt regionen og prøv igjen.');
     }
 
+    const blob = await fetch(window.bareo.audioUrl).then((res) => res.blob());
+
     const createPayload = {
       name,
       ...clip,
-      contentType: 'audio/webm',
+      contentType: blob.type || 'audio/webm',
+      size: blob.size,
+      data: await blobToBase64(blob),
     };
 
-    const createResponse = await fetchJson(`${API_BASE}/sounds`, {
+    await fetchJson(`${API_BASE}/sounds`, {
       method: 'POST',
       body: JSON.stringify(createPayload),
-    });
-
-    const { uploadUrl, sound } = createResponse;
-
-    const blob = await fetch(window.bareo.audioUrl).then((res) => res.blob());
-
-    const putRes = await fetch(uploadUrl, {
-      method: 'PUT',
-      headers: {
-        'Content-Type': blob.type || 'audio/webm',
-      },
-      body: blob,
-    });
-
-    if (!putRes.ok) {
-      await fetchJson(`${API_BASE}/sounds/${sound.id}`, { method: 'DELETE' }).catch(() => {});
-      throw new Error('Opplasting feilet. Prøv igjen.');
-    }
-
-    await fetchJson(`${API_BASE}/sounds/${sound.id}/complete`, {
-      method: 'POST',
-      body: JSON.stringify({
-        status: 'ready',
-        size: blob.size,
-      }),
     });
 
     if (window.bareo) {
