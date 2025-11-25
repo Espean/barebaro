@@ -2,9 +2,13 @@ const API_BASE = window.location.hostname === 'localhost'
   ? 'http://localhost:7071/api'
   : '/api';
 
+import WaveSurfer from 'https://unpkg.com/wavesurfer.js@7/dist/wavesurfer.esm.js';
+
 const state = {
   loading: false,
 };
+
+const players = new Map();
 
 const grid = document.getElementById('sound-grid');
 const emptyState = document.getElementById('empty-state');
@@ -62,6 +66,14 @@ const fetchJson = async (path, init = {}) => {
 
 const clearExistingCards = () => {
   if (!grid) return;
+  players.forEach((player) => {
+    try {
+      player.destroy();
+    } catch (error) {
+      console.warn('Failed to destroy player', error);
+    }
+  });
+  players.clear();
   const cards = grid.querySelectorAll('.sound-card');
   cards.forEach((card) => card.remove());
 };
@@ -82,6 +94,14 @@ const showEmptyState = (message, options = {}) => {
   emptyState.innerHTML = `<strong>${escapeHtml(text)}</strong>`;
 };
 
+const stopAllExcept = (soundId) => {
+  players.forEach((player, id) => {
+    if (id !== soundId && player.isPlaying()) {
+      player.pause();
+    }
+  });
+};
+
 const renderSound = (sound) => {
   if (!grid) return;
 
@@ -99,11 +119,93 @@ const renderSound = (sound) => {
 
   const audioSrc = sound.downloadUrl || sound.blobUrl || null;
   if (audioSrc) {
-    const audio = document.createElement('audio');
-    audio.controls = true;
-    audio.preload = 'none';
-    audio.src = audioSrc;
-    card.appendChild(audio);
+    const playerWrapper = document.createElement('div');
+    playerWrapper.className = 'player-wrapper';
+
+    const controls = document.createElement('div');
+    controls.className = 'player-controls';
+
+    const playButton = document.createElement('button');
+    playButton.type = 'button';
+    playButton.className = 'play-btn';
+    playButton.textContent = 'Spill av';
+
+    const deleteButton = document.createElement('button');
+    deleteButton.type = 'button';
+    deleteButton.className = 'delete-btn';
+    deleteButton.textContent = 'Slett';
+
+    controls.appendChild(playButton);
+    controls.appendChild(deleteButton);
+
+    const waveform = document.createElement('div');
+    waveform.className = 'waveform';
+
+    playerWrapper.appendChild(controls);
+    playerWrapper.appendChild(waveform);
+    card.appendChild(playerWrapper);
+
+    const waveSurfer = WaveSurfer.create({
+      container: waveform,
+      waveColor: '#43cea2',
+      progressColor: '#185a9d',
+      height: 56,
+      barWidth: 2,
+      responsive: true,
+      url: audioSrc,
+      interact: false,
+      normalize: true,
+    });
+
+    players.set(sound.id, waveSurfer);
+
+    const resetPlayButton = () => {
+      playButton.textContent = 'Spill av';
+    };
+
+    playButton.addEventListener('click', () => {
+      if (waveSurfer.isPlaying()) {
+        waveSurfer.pause();
+        resetPlayButton();
+        return;
+      }
+      stopAllExcept(sound.id);
+      waveSurfer.play();
+      playButton.textContent = 'Pause';
+    });
+
+    waveSurfer.on('finish', resetPlayButton);
+    waveSurfer.on('pause', resetPlayButton);
+
+    deleteButton.addEventListener('click', async () => {
+      const confirmed = window.confirm(`Slette klippet "${sound.displayName || sound.name}"?`);
+      if (!confirmed) {
+        return;
+      }
+      try {
+        deleteButton.disabled = true;
+        deleteButton.textContent = 'Sletter…';
+        await fetchJson(`/sounds/${encodeURIComponent(sound.id)}`, { method: 'DELETE' });
+        const player = players.get(sound.id);
+        if (player) {
+          try {
+            player.destroy();
+          } catch (error) {
+            console.warn('Failed to destroy player', error);
+          }
+          players.delete(sound.id);
+        }
+        card.remove();
+        if (!grid.querySelector('.sound-card')) {
+          showEmptyState(null, { useDefault: true });
+        }
+      } catch (error) {
+        console.error('Failed to delete sound', error);
+        deleteButton.disabled = false;
+        deleteButton.textContent = 'Slett';
+        window.alert('Klarte ikke å slette klippet. Prøv igjen.');
+      }
+    });
   } else {
     const info = document.createElement('p');
     info.textContent = 'Fant ikke en avspillingslenke for dette klippet.';

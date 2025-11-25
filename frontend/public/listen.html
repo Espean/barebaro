@@ -82,6 +82,48 @@
       color: #5f6c7c;
       line-height: 1.6;
     }
+    .player-wrapper {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+    .player-controls {
+      display: flex;
+      gap: 12px;
+      align-items: center;
+      flex-wrap: wrap;
+    }
+    .play-btn,
+    .delete-btn {
+      border: none;
+      border-radius: 999px;
+      padding: 10px 20px;
+      font-size: 14px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: transform 0.15s ease, box-shadow 0.2s ease;
+      color: #fff;
+    }
+    .play-btn {
+      background: linear-gradient(120deg, #185a9d 0%, #43cea2 100%);
+      box-shadow: 0 6px 18px rgba(24, 90, 157, 0.24);
+    }
+    .play-btn:hover {
+      transform: translateY(-1px);
+      box-shadow: 0 10px 24px rgba(24, 90, 157, 0.32);
+    }
+    .delete-btn {
+      background: linear-gradient(120deg, #ff5858 0%, #f09819 100%);
+      box-shadow: 0 6px 18px rgba(255, 88, 88, 0.24);
+    }
+    .delete-btn:hover {
+      transform: translateY(-1px);
+      box-shadow: 0 10px 24px rgba(255, 88, 88, 0.32);
+    }
+    .waveform {
+      width: 100%;
+      min-height: 60px;
+    }
     .empty-state {
       text-align: center;
       color: #5f6c7c;
