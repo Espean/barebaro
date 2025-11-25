@@ -7,8 +7,23 @@ if (!globalThis.crypto && nodeCrypto.webcrypto) {
 }
 
 const { CosmosClient } = require('@azure/cosmos');
-const { BlobServiceClient, StorageSharedKeyCredential } = require('@azure/storage-blob');
-const { required, cosmosEndpoint, cosmosDatabase, cosmosContainer, cosmosKey, storageAccount, storageKey, storageUrl } = require('./config');
+const {
+  BlobServiceClient,
+  StorageSharedKeyCredential,
+  generateBlobSASQueryParameters,
+  BlobSASPermissions,
+} = require('@azure/storage-blob');
+const {
+  required,
+  cosmosEndpoint,
+  cosmosDatabase,
+  cosmosContainer,
+  cosmosKey,
+  storageAccount,
+  storageKey,
+  storageUrl,
+  audioContainer,
+} = require('./config');
 
 let cosmosContainerRef;
 let blobServiceClientRef;
@@ -37,7 +52,29 @@ const getSharedKeyCredential = () => {
   return sharedKeyCredentialRef;
 };
 
+const createReadSasUrl = ({ blobName, expiresOnMinutes = 60 }) => {
+  if (!blobName) {
+    return null;
+  }
+
+  const expiresOn = new Date(Date.now() + expiresOnMinutes * 60 * 1000);
+  const sas = generateBlobSASQueryParameters(
+    {
+      containerName: audioContainer(),
+      blobName,
+      permissions: BlobSASPermissions.parse('r'),
+      expiresOn,
+      protocol: 'https',
+    },
+    getSharedKeyCredential()
+  );
+
+  const baseUrl = `${storageUrl().replace(/\/$/, '')}/${audioContainer()}/${encodeURIComponent(blobName)}`;
+  return `${baseUrl}?${sas.toString()}`;
+};
+
 module.exports = {
   getCosmosContainer,
   getBlobServiceClient,
+  createReadSasUrl,
 };

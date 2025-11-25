@@ -1,6 +1,6 @@
 'use strict';
 
-const { getCosmosContainer } = require('../shared/clients');
+const { getCosmosContainer, createReadSasUrl } = require('../shared/clients');
 const { getUserId } = require('../shared/config');
 
 module.exports = async function listSounds(context, req) {
@@ -18,10 +18,15 @@ module.exports = async function listSounds(context, req) {
 
     const { resources } = await container.items.query(querySpec, { partitionKey: userId }).fetchAll();
 
+    const items = resources.map((item) => ({
+      ...item,
+      downloadUrl: createReadSasUrl({ blobName: item?.blobName }),
+    }));
+
     context.res = {
       status: 200,
       body: {
-        items: resources,
+        items,
       },
     };
   } catch (error) {
